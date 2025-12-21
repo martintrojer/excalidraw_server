@@ -190,7 +190,7 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
                     marginBottom: '10px',
                   }}
                 >
-                  Created: {new Date(drawing.created_at).toLocaleDateString()}
+                  Created: {new Date(drawing.created_at).toLocaleString()}
                 </div>
                 <div
                   style={{
@@ -198,7 +198,7 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
                     fontSize: '12px',
                   }}
                 >
-                  Updated: {new Date(drawing.updated_at).toLocaleDateString()}
+                  Updated: {new Date(drawing.updated_at).toLocaleString()}
                 </div>
               </div>
             ))}
