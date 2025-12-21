@@ -26,6 +26,7 @@ export default function Toolbar({
   const [toolbarVisible, setToolbarVisible] = useState(true);
   const [title, setTitle] = useState(initialTitle);
   const [showNewConfirm, setShowNewConfirm] = useState(false);
+  const [showListConfirm, setShowListConfirm] = useState(false);
 
   // Update title when initialTitle prop changes (e.g., when drawing loads)
   useEffect(() => {
@@ -50,6 +51,21 @@ export default function Toolbar({
   const handleNewConfirm = () => {
     setShowNewConfirm(false);
     onNew();
+  };
+
+  const handleList = () => {
+    // Only show confirmation if we're in excalidraw mode (drawingId is not null)
+    if (drawingId !== null) {
+      setShowListConfirm(true);
+    } else {
+      // Already on list page, no confirmation needed
+      onList();
+    }
+  };
+
+  const handleListConfirm = () => {
+    setShowListConfirm(false);
+    onList();
   };
 
   // Keyboard shortcut: Ctrl+S or Cmd+S to save
@@ -168,7 +184,7 @@ export default function Toolbar({
           New
         </button>
         <button
-          onClick={onList}
+          onClick={handleList}
           style={{
             padding: '8px 16px',
             border: '1px solid #444',
@@ -239,6 +255,16 @@ export default function Toolbar({
         onConfirm={handleNewConfirm}
         onCancel={() => setShowNewConfirm(false)}
         confirmText="Create New"
+        cancelText="Cancel"
+        confirmButtonStyle="primary"
+      />
+      <ConfirmModal
+        isOpen={showListConfirm}
+        title="View All Drawings"
+        message="Go to all drawings? Current changes will be lost if not saved."
+        onConfirm={handleListConfirm}
+        onCancel={() => setShowListConfirm(false)}
+        confirmText="View All"
         cancelText="Cancel"
         confirmButtonStyle="primary"
       />
