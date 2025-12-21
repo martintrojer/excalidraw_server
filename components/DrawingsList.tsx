@@ -3,13 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import LoadingSkeleton from './LoadingSkeleton';
-import type { DrawingMetadata } from '@/lib/types';
+import type { Drawing } from '@/lib/types';
 import { DEBOUNCE_DELAY_MS, ITEMS_PER_PAGE } from '@/lib/constants';
-
-interface Drawing extends DrawingMetadata {
-  url?: string;
-  markdown_link?: string;
-}
 
 interface DrawingsListProps {
   onSelectDrawing: (id: string) => void;

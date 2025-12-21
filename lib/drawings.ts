@@ -1,6 +1,5 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
 import { isValidDrawingId } from './validation';
 import type { DrawingMetadata } from './types';
 import { DEFAULT_HOST, DEFAULT_PORT } from './constants';
@@ -9,18 +8,15 @@ import { DEFAULT_HOST, DEFAULT_PORT } from './constants';
 // DRAWINGS_DIR must be set in .env file (can be absolute or relative to project root)
 const getDrawingsDir = (): string => {
   if (!process.env.DRAWINGS_DIR) {
-    console.error('ERROR: DRAWINGS_DIR environment variable is not set!');
-    console.error('Please create a .env file in the project root with:');
-    console.error('  DRAWINGS_DIR=/path/to/your/drawings');
-    console.error('Or see .env.example for a template.');
-    process.exit(1);
+    throw new Error(
+      'DRAWINGS_DIR environment variable is not set! Please create a .env file in the project root with: DRAWINGS_DIR=/path/to/your/drawings'
+    );
   }
 
   const drawingsDir = process.env.DRAWINGS_DIR.trim();
 
   if (!drawingsDir) {
-    console.error('ERROR: DRAWINGS_DIR is set but empty!');
-    process.exit(1);
+    throw new Error('DRAWINGS_DIR is set but empty!');
   }
 
   // If it's an absolute path, use it as-is
@@ -185,5 +181,3 @@ export function generateMarkdownLink(title: string, drawingId: string) {
   const url = generateUrl(drawingId);
   return `[${title}](${url})`;
 }
-
-export { uuidv4 };

@@ -1,14 +1,19 @@
 // Type definitions for Excalidraw data structures
-// Import types from Excalidraw library when available, otherwise use our definitions
+// Note: @excalidraw/excalidraw doesn't export types directly, so we define minimal types
+// Runtime validation is handled by isValidDrawingData
 
-// Re-export Excalidraw types if available, otherwise define minimal types
-// Using 'any' for Excalidraw types to avoid type conflicts - the library types are complex
-// and we'll validate the data structure at runtime
+// Minimal type definition for Excalidraw elements
+// Elements are validated at runtime, so we use a flexible type here
+export type ExcalidrawElement = {
+  id: string;
+  type: string;
+  [key: string]: unknown;
+};
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ExcalidrawElement = any; // Will be validated by isValidDrawingData
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ExcalidrawAppState = any; // Will be validated by isValidDrawingData
+// Minimal type definition for Excalidraw app state
+// AppState is validated at runtime, so we use a flexible type here
+// Using Record<string, unknown> to match Excalidraw's AppState index signature
+export type ExcalidrawAppState = Record<string, unknown>;
 
 export interface ExcalidrawDrawingData {
   type: 'excalidraw';
@@ -25,11 +30,7 @@ export interface DrawingMetadata {
   updated_at: string;
 }
 
-export interface Drawing {
-  id: string;
-  title: string;
-  created_at: string;
-  updated_at: string;
+export interface Drawing extends DrawingMetadata {
   url?: string;
-  markdown_link?: string;
+  markdownLink?: string;
 }

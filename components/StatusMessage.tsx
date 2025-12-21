@@ -29,41 +29,12 @@ export default function StatusMessage({
   const handleCopy = async () => {
     if (!markdownLink) return;
 
-    // Try modern Clipboard API first
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      try {
-        await navigator.clipboard.writeText(markdownLink);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-        return;
-      } catch (error) {
-        console.warn('Clipboard API failed, trying fallback:', error);
-      }
-    }
-
-    // Fallback: Use textarea method for older browsers or when Clipboard API fails
     try {
-      const textarea = document.createElement('textarea');
-      textarea.value = markdownLink;
-      textarea.style.position = 'fixed';
-      textarea.style.left = '-999999px';
-      textarea.style.top = '-999999px';
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-
-      const successful = document.execCommand('copy');
-      document.body.removeChild(textarea);
-
-      if (successful) {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } else {
-        throw new Error('execCommand copy failed');
-      }
+      await navigator.clipboard.writeText(markdownLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
-      // Show error to user
       alert('Failed to copy to clipboard. Please copy manually: ' + markdownLink);
     }
   };
@@ -84,7 +55,7 @@ export default function StatusMessage({
             ? 'rgba(76, 175, 80, 0.9)'
             : type === 'error'
               ? 'rgba(244, 67, 54, 0.9)'
-              : 'rgba(0,0,0,0.7)',
+              : 'var(--overlay)',
         color: 'white',
         padding: '8px 12px',
         borderRadius: '4px',
@@ -93,7 +64,7 @@ export default function StatusMessage({
         alignItems: 'center',
         gap: '8px',
         maxWidth: '400px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+        boxShadow: 'var(--shadow-sm)',
       }}
     >
       <span>{displayMessage}</span>

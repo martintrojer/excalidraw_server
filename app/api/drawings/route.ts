@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
 import {
   listDrawings,
   saveDrawing,
-  uuidv4,
   generateUrl,
   generateMarkdownLink,
   ensureDrawingsDir,
@@ -20,7 +20,7 @@ export async function GET() {
     const drawingsWithUrls = drawings.map((drawing: DrawingMetadata) => ({
       ...drawing,
       url: generateUrl(drawing.id),
-      markdown_link: generateMarkdownLink(drawing.title, drawing.id),
+      markdownLink: generateMarkdownLink(drawing.title, drawing.id),
     }));
 
     return NextResponse.json({
@@ -81,9 +81,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        drawing_id: drawingId,
+        drawingId: drawingId,
         url: generateUrl(drawingId),
-        markdown_link: generateMarkdownLink(metadata.title, drawingId),
+        markdownLink: generateMarkdownLink(metadata.title, drawingId),
         metadata: metadata,
       },
       { status: 201 }

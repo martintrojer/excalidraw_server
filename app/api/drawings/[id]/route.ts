@@ -5,6 +5,7 @@ import {
   loadMetadata,
   getDrawingPath,
   getMetadataPath,
+  saveDrawing,
   generateUrl,
   generateMarkdownLink,
 } from '@/lib/drawings';
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({
       success: true,
-      drawing_id: drawingId,
+      drawingId: drawingId,
       drawing: drawing,
       metadata: metadata,
       url: generateUrl(drawingId),
@@ -98,45 +99,30 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       );
     }
 
-    const drawingPath = getDrawingPath(drawingId);
-    try {
-      await fs.access(drawingPath);
-    } catch {
+    // Check if drawing exists
+    const existingDrawing = await loadDrawing(drawingId);
+    if (!existingDrawing) {
       return NextResponse.json(
         { success: false, error: ERROR_MESSAGES.DRAWING_NOT_FOUND },
         { status: 404 }
       );
     }
 
-    // Load existing metadata or create new
-    let metadata = await loadMetadata(drawingId);
-    if (!metadata) {
-      // Create new metadata with current timestamp as created_at
-      metadata = {
-        id: drawingId,
-        title: title?.trim() || `Drawing ${drawingId.substring(0, 8)}`,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-    } else {
-      // Preserve existing created_at, only update title and updated_at
-      if (title) {
-        metadata.title = title.trim();
-      }
-      metadata.updated_at = new Date().toISOString();
+    // If title is not provided, preserve existing title
+    let finalTitle = title;
+    if (finalTitle === undefined) {
+      const existingMetadata = await loadMetadata(drawingId);
+      finalTitle = existingMetadata?.title;
     }
 
-    // Save the drawing (drawing is already validated as ExcalidrawDrawingData)
-    await fs.writeFile(drawingPath, JSON.stringify(drawing, null, 2), 'utf-8');
-
-    // Save updated metadata
-    await fs.writeFile(getMetadataPath(drawingId), JSON.stringify(metadata, null, 2), 'utf-8');
+    // Save the drawing using the shared saveDrawing function
+    const metadata = await saveDrawing(drawingId, drawing, finalTitle);
 
     return NextResponse.json({
       success: true,
-      drawing_id: drawingId,
+      drawingId: drawingId,
       url: generateUrl(drawingId),
-      markdown_link: generateMarkdownLink(metadata.title, drawingId),
+      markdownLink: generateMarkdownLink(metadata.title, drawingId),
       metadata: metadata,
     });
   } catch (error: unknown) {

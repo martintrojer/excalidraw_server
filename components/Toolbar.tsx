@@ -87,8 +87,8 @@ export default function Toolbar({
       style={{
         width: '40px',
         height: '40px',
-        background: '#1e1e1e',
-        border: '1px solid #444',
+        background: 'var(--bg-primary)',
+        border: '1px solid var(--border-color)',
         borderRadius: '4px',
         cursor: 'pointer',
         display: 'flex',
@@ -105,7 +105,7 @@ export default function Toolbar({
         style={{
           width: '20px',
           height: '2px',
-          background: '#e0e0e0',
+          background: 'var(--text-primary)',
           borderRadius: '2px',
         }}
       />
@@ -113,7 +113,7 @@ export default function Toolbar({
         style={{
           width: '20px',
           height: '2px',
-          background: '#e0e0e0',
+          background: 'var(--text-primary)',
           borderRadius: '2px',
         }}
       />
@@ -121,7 +121,7 @@ export default function Toolbar({
         style={{
           width: '20px',
           height: '2px',
-          background: '#e0e0e0',
+          background: 'var(--text-primary)',
           borderRadius: '2px',
         }}
       />
@@ -138,10 +138,10 @@ export default function Toolbar({
           bottom: '10px',
           right: '10px',
           zIndex: 1001,
-          background: '#1e1e1e',
+          background: 'var(--bg-primary)',
           padding: '10px',
           borderRadius: '8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          boxShadow: 'var(--shadow-sm)',
           display: 'flex',
           gap: '10px',
           alignItems: 'center',
@@ -154,10 +154,10 @@ export default function Toolbar({
               onClick={handleNew}
               style={{
                 padding: '8px 16px',
-                border: '1px solid #444',
+                border: '1px solid var(--border-color)',
                 borderRadius: '4px',
-                background: '#2d2d2d',
-                color: '#e0e0e0',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
                 cursor: 'pointer',
                 fontSize: '14px',
                 whiteSpace: 'nowrap',
@@ -172,10 +172,10 @@ export default function Toolbar({
               onClick={handleList}
               style={{
                 padding: '8px 16px',
-                border: '1px solid #444',
+                border: '1px solid var(--border-color)',
                 borderRadius: '4px',
-                background: '#2d2d2d',
-                color: '#e0e0e0',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
                 cursor: 'pointer',
                 fontSize: '14px',
                 whiteSpace: 'nowrap',
@@ -193,10 +193,10 @@ export default function Toolbar({
               onChange={(e) => setTitle(e.target.value)}
               style={{
                 padding: '6px 12px',
-                border: '1px solid #444',
+                border: '1px solid var(--border-color)',
                 borderRadius: '4px',
-                background: '#2d2d2d',
-                color: '#e0e0e0',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
                 fontSize: '14px',
                 width: '180px',
                 flexShrink: 0,
@@ -210,9 +210,9 @@ export default function Toolbar({
               className="primary"
               style={{
                 padding: '8px 16px',
-                border: '1px solid #4CAF50',
+                border: `1px solid var(--success)`,
                 borderRadius: '4px',
-                background: isSaving ? '#66BB6A' : '#4CAF50',
+                background: isSaving ? 'var(--success-hover)' : 'var(--success)',
                 color: 'white',
                 cursor: isSaving ? 'wait' : 'pointer',
                 fontSize: '14px',
@@ -230,9 +230,9 @@ export default function Toolbar({
                 onClick={onDelete}
                 style={{
                   padding: '8px 16px',
-                  border: '1px solid #f44336',
+                  border: `1px solid var(--danger)`,
                   borderRadius: '4px',
-                  background: '#f44336',
+                  background: 'var(--danger)',
                   color: 'white',
                   cursor: 'pointer',
                   fontSize: '14px',

@@ -2,20 +2,11 @@
 
 import { useRouter } from 'next/navigation';
 import DrawingsList from '../components/DrawingsList';
-import Toolbar from '../components/Toolbar';
+import HomeToolbar from '../components/HomeToolbar';
 import ErrorBoundary from '../components/ErrorBoundary';
 
 export default function HomePage() {
   const router = useRouter();
-
-  // Dummy handlers for toolbar on home page
-  const handleSave = () => {
-    // No-op on home page
-  };
-
-  const handleDelete = () => {
-    // No-op on home page
-  };
 
   return (
     <ErrorBoundary>
@@ -23,7 +14,7 @@ export default function HomePage() {
         style={{
           width: '100vw',
           height: '100vh',
-          background: '#1e1e1e',
+          background: 'var(--bg-primary)',
           overflow: 'auto',
           position: 'relative',
         }}
@@ -33,13 +24,7 @@ export default function HomePage() {
             router.push(`/drawing/${id}`);
           }}
         />
-        <Toolbar
-          drawingId={null}
-          onSave={handleSave}
-          onDelete={handleDelete}
-          onNew={() => router.push('/drawing/new')}
-          onList={() => router.push('/')}
-        />
+        <HomeToolbar onNew={() => router.push('/drawing/new')} onList={() => router.push('/')} />
       </div>
     </ErrorBoundary>
   );
