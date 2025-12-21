@@ -17,7 +17,7 @@ const getDrawingsDir = (): string => {
   }
 
   const drawingsDir = process.env.DRAWINGS_DIR.trim();
-  
+
   if (!drawingsDir) {
     console.error('ERROR: DRAWINGS_DIR is set but empty!');
     process.exit(1);
@@ -27,7 +27,7 @@ const getDrawingsDir = (): string => {
   if (path.isAbsolute(drawingsDir)) {
     return drawingsDir;
   }
-  
+
   // If it's relative, resolve it relative to the project root (process.cwd())
   return path.resolve(process.cwd(), drawingsDir);
 };
@@ -174,6 +174,8 @@ export async function listDrawings(): Promise<DrawingMetadata[]> {
 }
 
 export function generateUrl(drawingId: string) {
+  // Read HOST and PORT from environment variables (e.g., from .env file)
+  // This allows users to set HOST=excalidraw.local for cleaner URLs in notes
   const host = process.env.HOST || DEFAULT_HOST;
   const port = process.env.PORT || DEFAULT_PORT;
   return `http://${host}:${port}/drawing/${drawingId}`;

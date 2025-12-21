@@ -13,6 +13,7 @@ A minimal, self-hosted Excalidraw server designed for local note-taking systems.
 ## Use Case
 
 This server is ideal for:
+
 - Personal note-taking systems (Obsidian, LogSeq, etc.)
 - Self-hosted knowledge bases
 - Local documentation projects
@@ -63,6 +64,35 @@ PORT=9876
 **Important**: `DRAWINGS_DIR` is **required**. The server will exit with an error if it's not set.
 
 Example `.env` file:
+
 ```bash
 DRAWINGS_DIR=$HOME/notes/excalidraw_drawings
 ```
+
+### Optional: Local DNS Setup
+
+To avoid using `127.0.0.1` in your note links, you can set up a local DNS entry for `excalidraw.local`. This makes your markdown links cleaner and more readable.
+
+**On Mac/Linux:**
+
+1. Edit the hosts file (requires sudo):
+
+   ```bash
+   sudo nano /etc/hosts
+   ```
+
+2. Add this line:
+
+   ```
+   127.0.0.1 excalidraw.local
+   ```
+
+3. Update your `.env` file to use the new hostname:
+
+   ```bash
+   HOST=excalidraw.local
+   ```
+
+4. Restart the server. Now your drawings will be accessible at `http://excalidraw.local:9876` instead of `http://127.0.0.1:9876`.
+
+**Note:** The markdown links generated when saving drawings will now use the cleaner `excalidraw.local` domain instead of the IP address.
