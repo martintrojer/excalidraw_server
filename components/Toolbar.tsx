@@ -98,6 +98,7 @@ export default function Toolbar({
         gap: '4px',
         padding: '8px',
         flexShrink: 0,
+        boxSizing: 'border-box',
       }}
     >
       <span
@@ -106,8 +107,6 @@ export default function Toolbar({
           height: '2px',
           background: '#e0e0e0',
           borderRadius: '2px',
-          transition: 'all 0.3s ease',
-          transform: toolbarVisible ? 'rotate(45deg) translate(5px, 5px)' : 'none',
         }}
       />
       <span
@@ -116,8 +115,6 @@ export default function Toolbar({
           height: '2px',
           background: '#e0e0e0',
           borderRadius: '2px',
-          transition: 'all 0.3s ease',
-          opacity: toolbarVisible ? 0 : 1,
         }}
       />
       <span
@@ -126,8 +123,6 @@ export default function Toolbar({
           height: '2px',
           background: '#e0e0e0',
           borderRadius: '2px',
-          transition: 'all 0.3s ease',
-          transform: toolbarVisible ? 'rotate(-45deg) translate(5px, -5px)' : 'none',
         }}
       />
     </button>
@@ -135,28 +130,14 @@ export default function Toolbar({
 
   return (
     <>
-      {/* Hamburger button that stays visible when toolbar is hidden */}
-      {!toolbarVisible && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '10px',
-            right: '10px',
-            zIndex: 1001,
-          }}
-        >
-          {hamburgerButton}
-        </div>
-      )}
-
-      {/* Main toolbar */}
+      {/* Toolbar - hamburger always visible, other elements when open */}
       <div
         className="toolbar"
         style={{
           position: 'fixed',
           bottom: '10px',
           right: '10px',
-          zIndex: 1000,
+          zIndex: 1001,
           background: '#1e1e1e',
           padding: '10px',
           borderRadius: '8px',
@@ -164,88 +145,109 @@ export default function Toolbar({
           display: 'flex',
           gap: '10px',
           alignItems: 'center',
-          transition: 'transform 0.3s ease-in-out',
-          transform: toolbarVisible ? 'translateX(0)' : 'translateX(calc(100% + 20px))',
+          flexWrap: 'nowrap',
         }}
       >
-        {toolbarVisible && hamburgerButton}
-        <button
-          onClick={handleNew}
-          style={{
-            padding: '8px 16px',
-            border: '1px solid #444',
-            borderRadius: '4px',
-            background: '#2d2d2d',
-            color: '#e0e0e0',
-            cursor: 'pointer',
-            fontSize: '14px',
-          }}
-        >
-          New
-        </button>
-        <button
-          onClick={handleList}
-          style={{
-            padding: '8px 16px',
-            border: '1px solid #444',
-            borderRadius: '4px',
-            background: '#2d2d2d',
-            color: '#e0e0e0',
-            cursor: 'pointer',
-            fontSize: '14px',
-          }}
-        >
-          All Drawings
-        </button>
-        <input
-          type="text"
-          placeholder="Drawing title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          style={{
-            padding: '6px 12px',
-            border: '1px solid #444',
-            borderRadius: '4px',
-            background: '#2d2d2d',
-            color: '#e0e0e0',
-            fontSize: '14px',
-            width: '180px',
-            flexShrink: 0,
-          }}
-        />
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="primary"
-          style={{
-            padding: '8px 16px',
-            border: '1px solid #4CAF50',
-            borderRadius: '4px',
-            background: isSaving ? '#66BB6A' : '#4CAF50',
-            color: 'white',
-            cursor: isSaving ? 'wait' : 'pointer',
-            fontSize: '14px',
-            opacity: isSaving ? 0.7 : 1,
-          }}
-        >
-          {isSaving ? 'Saving...' : 'Save'}
-        </button>
-        {drawingId && drawingId !== 'new' && (
-          <button
-            onClick={onDelete}
-            style={{
-              padding: '8px 16px',
-              border: '1px solid #f44336',
-              borderRadius: '4px',
-              background: '#f44336',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-          >
-            Delete
-          </button>
+        {toolbarVisible && (
+          <>
+            <button
+              onClick={handleNew}
+              style={{
+                padding: '8px 16px',
+                border: '1px solid #444',
+                borderRadius: '4px',
+                background: '#2d2d2d',
+                color: '#e0e0e0',
+                cursor: 'pointer',
+                fontSize: '14px',
+                whiteSpace: 'nowrap',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              New
+            </button>
+            <button
+              onClick={handleList}
+              style={{
+                padding: '8px 16px',
+                border: '1px solid #444',
+                borderRadius: '4px',
+                background: '#2d2d2d',
+                color: '#e0e0e0',
+                cursor: 'pointer',
+                fontSize: '14px',
+                whiteSpace: 'nowrap',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              All Drawings
+            </button>
+            <input
+              type="text"
+              placeholder="Drawing title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #444',
+                borderRadius: '4px',
+                background: '#2d2d2d',
+                color: '#e0e0e0',
+                fontSize: '14px',
+                width: '180px',
+                flexShrink: 0,
+                height: '40px',
+                boxSizing: 'border-box',
+              }}
+            />
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="primary"
+              style={{
+                padding: '8px 16px',
+                border: '1px solid #4CAF50',
+                borderRadius: '4px',
+                background: isSaving ? '#66BB6A' : '#4CAF50',
+                color: 'white',
+                cursor: isSaving ? 'wait' : 'pointer',
+                fontSize: '14px',
+                opacity: isSaving ? 0.7 : 1,
+                whiteSpace: 'nowrap',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              {isSaving ? 'Saving...' : 'Save'}
+            </button>
+            {drawingId && drawingId !== 'new' && (
+              <button
+                onClick={onDelete}
+                style={{
+                  padding: '8px 16px',
+                  border: '1px solid #f44336',
+                  borderRadius: '4px',
+                  background: '#f44336',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  whiteSpace: 'nowrap',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                Delete
+              </button>
+            )}
+          </>
         )}
+        {hamburgerButton}
       </div>
 
       <ConfirmModal
