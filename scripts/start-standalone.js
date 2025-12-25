@@ -11,9 +11,7 @@ const { spawn } = require('child_process');
 
 // When running from standalone directory, __dirname will be the standalone dir
 // When running from scripts directory, use process.cwd()
-const standaloneDir = fs.existsSync(path.join(__dirname, 'server.js'))
-  ? __dirname
-  : process.cwd();
+const standaloneDir = fs.existsSync(path.join(__dirname, 'server.js')) ? __dirname : process.cwd();
 const envFile = path.join(standaloneDir, '.env');
 const serverFile = path.join(standaloneDir, 'server.js');
 
@@ -32,7 +30,7 @@ function loadEnvFile(envPath) {
 
   for (const line of lines) {
     const trimmedLine = line.trim();
-    
+
     // Skip empty lines and comments
     if (!trimmedLine || trimmedLine.startsWith('#')) {
       continue;
@@ -43,13 +41,15 @@ function loadEnvFile(envPath) {
     if (match) {
       const key = match[1].trim();
       let value = match[2].trim();
-      
+
       // Remove quotes if present
-      if ((value.startsWith('"') && value.endsWith('"')) || 
-          (value.startsWith("'") && value.endsWith("'"))) {
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
         value = value.slice(1, -1);
       }
-      
+
       // Only set if not already set (system env vars take precedence)
       if (!process.env[key]) {
         process.env[key] = value;
@@ -100,4 +100,3 @@ function startServer() {
 }
 
 startServer();
-

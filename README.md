@@ -32,6 +32,7 @@ For a quick setup without needing Node.js development tools, you can download a 
    - Download the `excalidraw-server-0.1.0.tar.gz` file (or the latest version)
 
 2. **Extract the archive:**
+
    ```bash
    tar -xzf excalidraw-server-0.1.0.tar.gz
    cd excalidraw-server-0.1.0
@@ -39,6 +40,7 @@ For a quick setup without needing Node.js development tools, you can download a 
 
 3. **Configure environment variables:**
    Create a `.env` file in the extracted directory:
+
    ```bash
    DRAWINGS_DIR=/path/to/your/drawings
    HOST=127.0.0.1
