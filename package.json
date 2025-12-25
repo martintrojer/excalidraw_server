@@ -4,7 +4,8 @@
   "description": "Next.js version of Excalidraw webapp",
   "scripts": {
     "dev": "next dev -p 9876",
-    "build": "next build",
+    "build": "node scripts/build-standalone.js",
+    "build:next": "next build",
     "start": "next start -p 9876",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

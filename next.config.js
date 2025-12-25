@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Enable standalone output for deployment
+  output: 'standalone',
   // Excalidraw uses some Node.js APIs (fs, path, crypto) that need to be polyfilled
   // In Next.js 16, Turbopack is the default bundler
   // Note: If you encounter issues with Turbopack, you can opt out by using --webpack flag:
