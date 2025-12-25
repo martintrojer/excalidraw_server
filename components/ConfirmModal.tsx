@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { baseButtonStyle, primaryButtonStyle, dangerButtonStyle } from '@/lib/buttonStyles';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -97,13 +98,10 @@ export default function ConfirmModal({
           <button
             onClick={onCancel}
             style={{
-              padding: '8px 16px',
+              ...baseButtonStyle,
               border: '1px solid #444',
-              borderRadius: '4px',
               background: '#2d2d2d',
               color: '#e0e0e0',
-              cursor: 'pointer',
-              fontSize: '14px',
             }}
           >
             {cancelText}
@@ -111,13 +109,8 @@ export default function ConfirmModal({
           <button
             onClick={onConfirm}
             style={{
-              padding: '8px 16px',
+              ...(confirmButtonStyle === 'danger' ? dangerButtonStyle : primaryButtonStyle),
               border: 'none',
-              borderRadius: '4px',
-              background: confirmButtonStyle === 'danger' ? '#f44336' : '#4CAF50',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '14px',
               fontWeight: '500',
             }}
           >

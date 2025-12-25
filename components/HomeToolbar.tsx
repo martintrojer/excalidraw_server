@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import HamburgerButton from './HamburgerButton';
+import { baseButtonStyle } from '@/lib/buttonStyles';
 
 interface HomeToolbarProps {
   onNew: () => void;
@@ -9,54 +11,6 @@ interface HomeToolbarProps {
 
 export default function HomeToolbar({ onNew, onList }: HomeToolbarProps) {
   const [toolbarVisible, setToolbarVisible] = useState(true);
-
-  const hamburgerButton = (
-    <button
-      className="hamburger-btn"
-      onClick={() => setToolbarVisible(!toolbarVisible)}
-      style={{
-        width: '40px',
-        height: '40px',
-        background: 'var(--bg-primary)',
-        border: '1px solid var(--border-color)',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '4px',
-        padding: '8px',
-        flexShrink: 0,
-        boxSizing: 'border-box',
-      }}
-    >
-      <span
-        style={{
-          width: '20px',
-          height: '2px',
-          background: 'var(--text-primary)',
-          borderRadius: '2px',
-        }}
-      />
-      <span
-        style={{
-          width: '20px',
-          height: '2px',
-          background: 'var(--text-primary)',
-          borderRadius: '2px',
-        }}
-      />
-      <span
-        style={{
-          width: '20px',
-          height: '2px',
-          background: 'var(--text-primary)',
-          borderRadius: '2px',
-        }}
-      />
-    </button>
-  );
 
   return (
     <div
@@ -78,45 +32,15 @@ export default function HomeToolbar({ onNew, onList }: HomeToolbarProps) {
     >
       {toolbarVisible && (
         <>
-          <button
-            onClick={onNew}
-            style={{
-              padding: '8px 16px',
-              border: '1px solid var(--border-color)',
-              borderRadius: '4px',
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              fontSize: '14px',
-              whiteSpace: 'nowrap',
-              height: '40px',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
+          <button onClick={onNew} style={baseButtonStyle}>
             New
           </button>
-          <button
-            onClick={onList}
-            style={{
-              padding: '8px 16px',
-              border: '1px solid var(--border-color)',
-              borderRadius: '4px',
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              fontSize: '14px',
-              whiteSpace: 'nowrap',
-              height: '40px',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
+          <button onClick={onList} style={baseButtonStyle}>
             All Drawings
           </button>
         </>
       )}
-      {hamburgerButton}
+      <HamburgerButton onClick={() => setToolbarVisible(!toolbarVisible)} />
     </div>
   );
 }

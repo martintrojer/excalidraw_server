@@ -7,9 +7,18 @@ import {
   generateMarkdownLink,
   ensureDrawingsDir,
 } from '@/lib/drawings';
-import { isValidTitle, isValidDrawingData } from '@/lib/validation';
 import { ERROR_MESSAGES, getErrorMessage } from '@/lib/errorMessages';
-import type { DrawingMetadata } from '@/lib/types';
+import { parseRequestBody, validateDrawingRequest } from '@/lib/apiHelpers';
+import type {
+  DrawingMetadata,
+  ListDrawingsResponse,
+  CreateDrawingRequest,
+  CreateDrawingResponse,
+  ApiErrorResponse,
+} from '@/lib/types';
+
+// Configure caching for this route
+export const revalidate = 60; // Revalidate every 60 seconds
 
 // GET /api/drawings
 export async function GET() {
@@ -23,14 +32,25 @@ export async function GET() {
       markdownLink: generateMarkdownLink(drawing.title, drawing.id),
     }));
 
-    return NextResponse.json({
+    const response: ListDrawingsResponse = {
       success: true,
       drawings: drawingsWithUrls,
       count: drawingsWithUrls.length,
+    };
+
+    // Add cache headers for client-side caching
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+      },
     });
   } catch (error: unknown) {
     console.error('Error listing drawings:', error);
-    return NextResponse.json({ success: false, error: getErrorMessage(error) }, { status: 500 });
+    const errorResponse: ApiErrorResponse = {
+      success: false,
+      error: getErrorMessage(error),
+    };
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }
 
@@ -39,60 +59,38 @@ export async function POST(request: NextRequest) {
   try {
     await ensureDrawingsDir();
 
-    // Validate request body exists
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json(
-        { success: false, error: ERROR_MESSAGES.INVALID_JSON },
-        { status: 400 }
-      );
+    // Parse and validate request body
+    const parseResult = await parseRequestBody<CreateDrawingRequest>(request);
+    if ('error' in parseResult) {
+      return parseResult.error;
+    }
+    const { body } = parseResult;
+
+    // Validate drawing request
+    const validationError = validateDrawingRequest(body, true);
+    if (validationError) {
+      return validationError;
     }
 
     const { drawing, title } = body;
 
-    // Validate required fields
-    if (!drawing) {
-      return NextResponse.json(
-        { success: false, error: ERROR_MESSAGES.MISSING_DRAWING_FIELD },
-        { status: 400 }
-      );
-    }
-
-    // Validate input
-    if (!isValidTitle(title)) {
-      return NextResponse.json(
-        { success: false, error: ERROR_MESSAGES.INVALID_TITLE },
-        { status: 400 }
-      );
-    }
-
-    if (!isValidDrawingData(drawing)) {
-      return NextResponse.json(
-        { success: false, error: ERROR_MESSAGES.INVALID_DRAWING_DATA },
-        { status: 400 }
-      );
-    }
-
     const drawingId = uuidv4();
     const metadata = await saveDrawing(drawingId, drawing, title);
 
-    return NextResponse.json(
-      {
-        success: true,
-        drawingId: drawingId,
-        url: generateUrl(drawingId),
-        markdownLink: generateMarkdownLink(metadata.title, drawingId),
-        metadata: metadata,
-      },
-      { status: 201 }
-    );
+    const response: CreateDrawingResponse = {
+      success: true,
+      drawingId: drawingId,
+      url: generateUrl(drawingId),
+      markdownLink: generateMarkdownLink(metadata.title, drawingId),
+      metadata: metadata,
+    };
+    return NextResponse.json(response, { status: 201 });
   } catch (error: unknown) {
     console.error('Error creating drawing:', error);
-    return NextResponse.json(
-      { success: false, error: getErrorMessage(error) || ERROR_MESSAGES.INTERNAL_ERROR },
-      { status: 500 }
-    );
+    const errorResponse: ApiErrorResponse = {
+      success: false,
+      error: getErrorMessage(error) || ERROR_MESSAGES.INTERNAL_ERROR,
+    };
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }

@@ -1,6 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ExcalidrawElement, ExcalidrawAppState, ExcalidrawDrawingData } from '@/lib/types';
+import type {
+  ExcalidrawElement,
+  ExcalidrawAppState,
+  ExcalidrawDrawingData,
+  ExcalidrawChangeHandler,
+  ExcalidrawInitialData,
+} from '@/lib/types';
 import {
   INITIALIZATION_DELAY_MS,
   EXCALIDRAW_TYPE,
@@ -22,26 +28,37 @@ interface UseDrawingOptions {
   isNew: boolean;
 }
 
+/**
+ * Custom hook for managing drawing state and operations
+ * Handles loading, saving, deleting, and change tracking for Excalidraw drawings
+ * @param options - Configuration options for the hook
+ * @param options.drawingId - The ID of the drawing (or 'new' for new drawings)
+ * @param options.isNew - Whether this is a new drawing
+ * @returns Object containing drawing state and handler functions
+ */
 export function useDrawing({ drawingId, isNew }: UseDrawingOptions) {
   const router = useRouter();
+
+  // UI State - controls loading indicators and user feedback
   const [loading, setLoading] = useState(!isNew);
   const [status, setStatus] = useState<Status | null>(null);
-  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
-  const [drawingTitle, setDrawingTitle] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [initialData, setInitialData] = useState<{
-    elements?: readonly ExcalidrawElement[];
-    appState: ExcalidrawAppState;
-  } | null>(null);
 
+  // Drawing Data State - manages the drawing content and metadata
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+  const [drawingTitle, setDrawingTitle] = useState<string>('');
+  const [initialData, setInitialData] = useState<ExcalidrawInitialData | null>(null);
+
+  // Refs for performance - avoid re-renders on every Excalidraw change
+  // These store the current drawing state without triggering React updates
   const initialDataRef = useRef<{
     elements: readonly ExcalidrawElement[];
     appState: ExcalidrawAppState;
   } | null>(null);
   const currentElementsRef = useRef<readonly ExcalidrawElement[]>([]);
   const currentAppStateRef = useRef<ExcalidrawAppState | null>(null);
-  const isInitializingRef = useRef(false);
+  const isInitializingRef = useRef(false); // Prevents onChange during initialization
 
   // Load drawing if editing existing
   useEffect(() => {
@@ -70,8 +87,7 @@ export function useDrawing({ drawingId, isNew }: UseDrawingOptions) {
           };
 
           initialDataRef.current = data;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setInitialData(data as any);
+          setInitialData(data);
 
           currentElementsRef.current = loadedElements;
           currentAppStateRef.current = loadedAppState;
@@ -96,14 +112,13 @@ export function useDrawing({ drawingId, isNew }: UseDrawingOptions) {
     loadDrawing();
   }, [drawingId, isNew, initialDataLoaded]);
 
-  const handleChange = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (newElements: readonly any[], newAppState: any, _files?: any) => {
+  const handleChange = useCallback<ExcalidrawChangeHandler>(
+    (newElements, newAppState, _files) => {
       if (isInitializingRef.current) return;
       if (!isNew && !initialDataLoaded) return;
 
-      currentElementsRef.current = newElements as readonly ExcalidrawElement[];
-      currentAppStateRef.current = newAppState as ExcalidrawAppState;
+      currentElementsRef.current = newElements;
+      currentAppStateRef.current = newAppState;
       // Note: files parameter is ignored as we don't handle binary files
     },
     [isNew, initialDataLoaded]
@@ -206,8 +221,7 @@ export function useDrawing({ drawingId, isNew }: UseDrawingOptions) {
           theme: DEFAULT_THEME,
           collaborators: [],
         } as ExcalidrawAppState,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      });
     }
   }, [isNew, initialData]);
 

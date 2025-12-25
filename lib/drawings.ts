@@ -3,34 +3,15 @@ import path from 'path';
 import { isValidDrawingId } from './validation';
 import type { DrawingMetadata } from './types';
 import { DEFAULT_HOST, DEFAULT_PORT } from './constants';
+import { getDrawingsDir } from './env';
 
-// Get drawings directory from environment variable (required)
-// DRAWINGS_DIR must be set in .env file (can be absolute or relative to project root)
-const getDrawingsDir = (): string => {
-  if (!process.env.DRAWINGS_DIR) {
-    throw new Error(
-      'DRAWINGS_DIR environment variable is not set! Please create a .env file in the project root with: DRAWINGS_DIR=/path/to/your/drawings'
-    );
-  }
-
-  const drawingsDir = process.env.DRAWINGS_DIR.trim();
-
-  if (!drawingsDir) {
-    throw new Error('DRAWINGS_DIR is set but empty!');
-  }
-
-  // If it's an absolute path, use it as-is
-  if (path.isAbsolute(drawingsDir)) {
-    return drawingsDir;
-  }
-
-  // If it's relative, resolve it relative to the project root (process.cwd())
-  return path.resolve(process.cwd(), drawingsDir);
-};
-
+// Get drawings directory from environment variable (validated at module load)
 const DRAWINGS_DIR = getDrawingsDir();
 
-// Ensure drawings directory exists
+/**
+ * Ensures the drawings directory exists, creating it if necessary
+ * @throws {Error} If the directory cannot be created
+ */
 export async function ensureDrawingsDir() {
   try {
     await fs.mkdir(DRAWINGS_DIR, { recursive: true });
@@ -39,6 +20,12 @@ export async function ensureDrawingsDir() {
   }
 }
 
+/**
+ * Gets the file path for a drawing by ID
+ * @param drawingId - The drawing ID
+ * @returns The file path for the drawing
+ * @throws {Error} If the drawing ID is invalid
+ */
 export function getDrawingPath(drawingId: string) {
   if (!isValidDrawingId(drawingId)) {
     throw new Error('Invalid drawing ID');
@@ -47,6 +34,12 @@ export function getDrawingPath(drawingId: string) {
   return path.join(DRAWINGS_DIR, `${drawingId}.excalidraw`);
 }
 
+/**
+ * Gets the file path for a drawing's metadata by ID
+ * @param drawingId - The drawing ID
+ * @returns The file path for the metadata
+ * @throws {Error} If the drawing ID is invalid
+ */
 export function getMetadataPath(drawingId: string) {
   if (!isValidDrawingId(drawingId)) {
     throw new Error('Invalid drawing ID');
@@ -55,6 +48,11 @@ export function getMetadataPath(drawingId: string) {
   return path.join(DRAWINGS_DIR, `${drawingId}.meta.json`);
 }
 
+/**
+ * Loads a drawing from the file system
+ * @param drawingId - The drawing ID to load
+ * @returns The drawing data, or null if not found or invalid
+ */
 export async function loadDrawing(drawingId: string) {
   if (!isValidDrawingId(drawingId)) {
     return null;
@@ -73,6 +71,11 @@ export async function loadDrawing(drawingId: string) {
   }
 }
 
+/**
+ * Loads drawing metadata from the file system
+ * @param drawingId - The drawing ID
+ * @returns The metadata, or null if not found or invalid
+ */
 export async function loadMetadata(drawingId: string): Promise<DrawingMetadata | null> {
   if (!isValidDrawingId(drawingId)) {
     return null;
@@ -91,6 +94,14 @@ export async function loadMetadata(drawingId: string): Promise<DrawingMetadata |
   }
 }
 
+/**
+ * Saves a drawing and its metadata to the file system
+ * @param drawingId - The drawing ID
+ * @param drawingData - The drawing data to save
+ * @param title - Optional title for the drawing
+ * @returns The saved metadata
+ * @throws {Error} If the drawing ID is invalid or saving fails
+ */
 export async function saveDrawing(
   drawingId: string,
   drawingData: unknown,
@@ -142,6 +153,10 @@ export async function saveDrawing(
   return metadata;
 }
 
+/**
+ * Lists all drawings from the file system
+ * @returns Array of drawing metadata, sorted by most recently updated first
+ */
 export async function listDrawings(): Promise<DrawingMetadata[]> {
   try {
     await ensureDrawingsDir();
@@ -169,6 +184,11 @@ export async function listDrawings(): Promise<DrawingMetadata[]> {
   }
 }
 
+/**
+ * Generates a URL for a drawing
+ * @param drawingId - The drawing ID
+ * @returns The full URL to access the drawing
+ */
 export function generateUrl(drawingId: string) {
   // Read HOST and PORT from environment variables (e.g., from .env file)
   // This allows users to set HOST=excalidraw.local for cleaner URLs in notes
@@ -177,6 +197,12 @@ export function generateUrl(drawingId: string) {
   return `http://${host}:${port}/drawing/${drawingId}`;
 }
 
+/**
+ * Generates a markdown link for a drawing
+ * @param title - The drawing title
+ * @param drawingId - The drawing ID
+ * @returns A markdown-formatted link string
+ */
 export function generateMarkdownLink(title: string, drawingId: string) {
   const url = generateUrl(drawingId);
   return `[${title}](${url})`;

@@ -5,6 +5,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import LoadingSkeleton from './LoadingSkeleton';
 import type { Drawing } from '@/lib/types';
 import { DEBOUNCE_DELAY_MS, ITEMS_PER_PAGE } from '@/lib/constants';
+import { formatDateTime } from '@/lib/utils';
 
 interface DrawingsListProps {
   onSelectDrawing: (id: string) => void;
@@ -185,7 +186,7 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
                     marginBottom: '10px',
                   }}
                 >
-                  Created: {new Date(drawing.created_at).toLocaleString()}
+                  Created: {formatDateTime(drawing.created_at)}
                 </div>
                 <div
                   style={{
@@ -193,7 +194,7 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
                     fontSize: '12px',
                   }}
                 >
-                  Updated: {new Date(drawing.updated_at).toLocaleString()}
+                  Updated: {formatDateTime(drawing.updated_at)}
                 </div>
               </div>
             ))}

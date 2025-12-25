@@ -1,8 +1,11 @@
 // Simple validation helpers for local-only app
 import { MIN_TITLE_LENGTH, MAX_TITLE_LENGTH } from './constants';
 
-// Basic UUID check (simplified for local use)
-// Prevents path traversal and ensures valid format
+/**
+ * Validates a drawing ID to prevent path traversal attacks and ensure valid format
+ * @param id - The drawing ID to validate
+ * @returns true if the ID is valid, false otherwise
+ */
 export function isValidDrawingId(id: string): boolean {
   if (!id || typeof id !== 'string') return false;
   // Prevent path traversal attacks
@@ -13,14 +16,22 @@ export function isValidDrawingId(id: string): boolean {
   return /^[a-zA-Z0-9_-]+$/.test(id);
 }
 
-// Basic title validation
+/**
+ * Validates a drawing title
+ * @param title - The title to validate (optional)
+ * @returns true if the title is valid or empty (title is optional), false otherwise
+ */
 export function isValidTitle(title: string | undefined | null): boolean {
   if (!title) return true; // Title is optional
   if (typeof title !== 'string') return false;
   return title.length >= MIN_TITLE_LENGTH && title.length <= MAX_TITLE_LENGTH;
 }
 
-// Validate drawing data structure
+/**
+ * Type guard to validate Excalidraw drawing data structure
+ * @param data - The data to validate
+ * @returns true if the data is a valid ExcalidrawDrawingData structure, false otherwise
+ */
 export function isValidDrawingData(data: unknown): data is import('./types').ExcalidrawDrawingData {
   if (!data || typeof data !== 'object') return false;
   const drawing = data as Record<string, unknown>;

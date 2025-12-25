@@ -1,17 +1,18 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import Toolbar from '../../../components/Toolbar';
-import StatusMessage from '../../../components/StatusMessage';
-import ErrorBoundary from '../../../components/ErrorBoundary';
-import ConfirmModal from '../../../components/ConfirmModal';
-import LoadingSpinner from '../../../components/LoadingSpinner';
-import { useDrawing } from '../../../hooks/useDrawing';
+import Toolbar from '@/components/Toolbar';
+import StatusMessage from '@/components/StatusMessage';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import ConfirmModal from '@/components/ConfirmModal';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { useDrawing } from '@/hooks/useDrawing';
 import { DEFAULT_THEME } from '@/lib/constants';
 
-// Dynamically import Excalidraw with SSR disabled
+// Dynamically import Excalidraw with SSR disabled and Suspense support
 const Excalidraw = dynamic(async () => (await import('@excalidraw/excalidraw')).Excalidraw, {
   ssr: false,
   loading: () => <LoadingSpinner message="Loading Excalidraw..." />,
@@ -31,7 +32,6 @@ export default function DrawingPage() {
     initialDataLoaded,
     drawingTitle,
     isSaving,
-    isDeleting,
     handleChange,
     saveDrawing,
     deleteDrawing,
@@ -67,24 +67,28 @@ export default function DrawingPage() {
   return (
     <ErrorBoundary>
       <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
-        <Excalidraw
-          key={`${drawingId}-${initialDataLoaded ? 'loaded' : 'loading'}`} // Force remount when data loads
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          initialData={(initialData || undefined) as any}
-          onChange={handleChange}
-          UIOptions={{
-            canvasActions: {
-              saveToActiveFile: false,
-              loadScene: false,
-              export: false,
-              toggleTheme: false,
-            },
-            tools: {
-              image: false,
-            },
-          }}
-          theme={DEFAULT_THEME}
-        />
+        <Suspense fallback={<LoadingSpinner message="Loading Excalidraw..." />}>
+          <Excalidraw
+            key={`${drawingId}-${initialDataLoaded ? 'loaded' : 'loading'}`} // Force remount when data loads
+            // Type assertion needed because @excalidraw/excalidraw doesn't export types
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            initialData={(initialData || undefined) as any}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onChange={handleChange as any}
+            UIOptions={{
+              canvasActions: {
+                saveToActiveFile: false,
+                loadScene: false,
+                export: false,
+                toggleTheme: false,
+              },
+              tools: {
+                image: false,
+              },
+            }}
+            theme={DEFAULT_THEME}
+          />
+        </Suspense>
         <Toolbar
           drawingId={isNew ? 'new' : drawingId}
           initialTitle={drawingTitle}
@@ -93,7 +97,6 @@ export default function DrawingPage() {
           onNew={handleNew}
           onList={handleList}
           isSaving={isSaving}
-          isDeleting={isDeleting}
         />
         {status && (
           <StatusMessage
