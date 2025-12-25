@@ -29,8 +29,10 @@ export default function Toolbar({
   const [showListConfirm, setShowListConfirm] = useState(false);
 
   // Update title when initialTitle prop changes (e.g., when drawing loads)
+  // This is intentional - we need to sync prop changes to local state for editing
   useEffect(() => {
     if (initialTitle) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTitle(initialTitle);
     }
   }, [initialTitle]);

@@ -30,6 +30,10 @@ export function useDrawing({ drawingId, isNew }: UseDrawingOptions) {
   const [drawingTitle, setDrawingTitle] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [initialData, setInitialData] = useState<{
+    elements?: readonly ExcalidrawElement[];
+    appState: ExcalidrawAppState;
+  } | null>(null);
 
   const initialDataRef = useRef<{
     elements: readonly ExcalidrawElement[];
@@ -60,10 +64,14 @@ export function useDrawing({ drawingId, isNew }: UseDrawingOptions) {
               : [],
           };
 
-          initialDataRef.current = {
+          const data = {
             elements: loadedElements,
             appState: loadedAppState,
           };
+
+          initialDataRef.current = data;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setInitialData(data as any);
 
           currentElementsRef.current = loadedElements;
           currentAppStateRef.current = loadedAppState;
@@ -90,7 +98,7 @@ export function useDrawing({ drawingId, isNew }: UseDrawingOptions) {
 
   const handleChange = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (newElements: readonly any[], newAppState: any, files?: any) => {
+    (newElements: readonly any[], newAppState: any, _files?: any) => {
       if (isInitializingRef.current) return;
       if (!isNew && !initialDataLoaded) return;
 
@@ -190,22 +198,18 @@ export function useDrawing({ drawingId, isNew }: UseDrawingOptions) {
     }
   }, [isNew, drawingId, isDeleting, router]);
 
-  const getInitialData = useCallback(() => {
-    if (isNew) {
-      return {
+  // Initialize initialData for new drawings
+  useEffect(() => {
+    if (isNew && !initialData) {
+      setInitialData({
         appState: {
           theme: DEFAULT_THEME,
           collaborators: [],
-        },
-      } as any;
+        } as ExcalidrawAppState,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
     }
-
-    if (initialDataRef.current) {
-      return initialDataRef.current as any;
-    }
-
-    return null;
-  }, [isNew, initialDataLoaded]);
+  }, [isNew, initialData]);
 
   return {
     loading,
@@ -218,6 +222,6 @@ export function useDrawing({ drawingId, isNew }: UseDrawingOptions) {
     handleChange,
     saveDrawing,
     deleteDrawing,
-    getInitialData,
+    initialData,
   };
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Toolbar from '../../../components/Toolbar';
 import StatusMessage from '../../../components/StatusMessage';
@@ -35,7 +35,7 @@ export default function DrawingPage() {
     handleChange,
     saveDrawing,
     deleteDrawing,
-    getInitialData,
+    initialData,
   } = useDrawing({ drawingId, isNew });
 
   const handleDeleteClick = () => {
@@ -60,8 +60,6 @@ export default function DrawingPage() {
     setShowDeleteConfirm(false);
   };
 
-  const initialData = useMemo(() => getInitialData(), [getInitialData]);
-
   if (loading || (!isNew && !initialDataLoaded)) {
     return <LoadingSpinner message="Loading drawing..." />;
   }
@@ -70,8 +68,9 @@ export default function DrawingPage() {
     <ErrorBoundary>
       <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
         <Excalidraw
-          key={drawingId} // Force remount when drawingId changes
-          initialData={initialData || undefined}
+          key={`${drawingId}-${initialDataLoaded ? 'loaded' : 'loading'}`} // Force remount when data loads
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          initialData={(initialData || undefined) as any}
           onChange={handleChange}
           UIOptions={{
             canvasActions: {

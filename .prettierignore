@@ -4,4 +4,4 @@ dist
 build
 *.lock
 package-lock.json
-
+.env*
