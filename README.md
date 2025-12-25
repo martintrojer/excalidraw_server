@@ -21,6 +21,39 @@ This server is ideal for:
 
 When you save a drawing, the server provides a markdown link that you can copy and paste directly into your notes.
 
+## Standalone Release (Recommended for Quick Setup)
+
+For a quick setup without needing Node.js development tools, you can download a pre-built standalone release from the [GitHub Releases page](https://github.com/martintrojer/excalidraw_server/releases).
+
+### Download and Run
+
+1. **Download the release:**
+   - Go to the [Releases page](https://github.com/martintrojer/excalidraw_server/releases)
+   - Download the `excalidraw-server-0.1.0.tar.gz` file (or the latest version)
+
+2. **Extract the archive:**
+   ```bash
+   tar -xzf excalidraw-server-0.1.0.tar.gz
+   cd excalidraw-server-0.1.0
+   ```
+
+3. **Configure environment variables:**
+   Create a `.env` file in the extracted directory:
+   ```bash
+   DRAWINGS_DIR=/path/to/your/drawings
+   HOST=127.0.0.1
+   PORT=9876
+   ```
+
+4. **Start the server:**
+   ```bash
+   node start.js
+   ```
+
+The server will run on `http://127.0.0.1:9876` (or the host/port you configured).
+
+**Note:** The standalone release includes all dependencies and is ready to run. You only need Node.js installed on your system.
+
 ## Setup
 
 1. Install dependencies:
