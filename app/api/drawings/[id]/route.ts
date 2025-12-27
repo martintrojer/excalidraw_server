@@ -83,20 +83,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const { drawing, title } = body;
 
-    // Check if drawing exists
-    const existingDrawing = await loadDrawing(drawingId);
-    if (!existingDrawing) {
+    // Check if drawing exists (use fs.access for efficiency - no need to parse the file)
+    const drawingPath = getDrawingPath(drawingId);
+    try {
+      await fs.access(drawingPath);
+    } catch {
       return createErrorResponse(ERROR_MESSAGES.DRAWING_NOT_FOUND, 404);
     }
 
-    // If title is not provided, preserve existing title
-    let finalTitle = title;
-    if (finalTitle === undefined) {
-      const existingMetadata = await loadMetadata(drawingId);
-      finalTitle = existingMetadata?.title;
-    }
+    // If title not provided, preserve existing title from metadata
+    const existingMetadata = title === undefined ? await loadMetadata(drawingId) : null;
+    const finalTitle = title ?? existingMetadata?.title;
 
-    // Save the drawing using the shared saveDrawing function
     const metadata = await saveDrawing(drawingId, drawing, finalTitle);
 
     const response: UpdateDrawingResponse = {

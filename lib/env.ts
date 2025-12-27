@@ -35,21 +35,3 @@ export function getDrawingsDir(): string {
   // If it's relative, resolve it relative to the project root (process.cwd())
   return path.resolve(process.cwd(), drawingsDir);
 }
-
-/**
- * Validates required environment variables at startup
- * @throws {Error} If any required environment variables are missing or invalid
- */
-export function validateEnvironment(): void {
-  try {
-    getDrawingsDir();
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('\n❌ Environment Configuration Error:\n');
-      console.error(error.message);
-      console.error('\n');
-      throw error;
-    }
-    throw error;
-  }
-}

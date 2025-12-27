@@ -10,18 +10,6 @@ import { getDatabase, getDatabaseData, saveDatabase } from './db';
 const DRAWINGS_DIR = getDrawingsDir();
 
 /**
- * Ensures the drawings directory exists, creating it if necessary
- * @throws {Error} If the directory cannot be created
- */
-export async function ensureDrawingsDir() {
-  try {
-    await fs.mkdir(DRAWINGS_DIR, { recursive: true });
-  } catch (error) {
-    console.error('Error creating drawings directory:', error);
-  }
-}
-
-/**
  * Gets the file path for a drawing by ID
  * @param drawingId - The drawing ID
  * @returns The file path for the drawing
@@ -90,14 +78,6 @@ export async function saveDrawing(
   drawingData: unknown,
   title?: string | null
 ): Promise<DrawingMetadata> {
-  if (!isValidDrawingId(drawingId)) {
-    throw new Error('Invalid drawing ID');
-  }
-
-  // Ensure directory exists before writing file
-  await ensureDrawingsDir();
-  const drawingPath = getDrawingPath(drawingId);
-
   // Ensure drawingData is an object
   let parsedData: unknown = drawingData;
   if (typeof drawingData === 'string') {
@@ -112,30 +92,23 @@ export async function saveDrawing(
     throw new Error('Drawing data must be an object');
   }
 
-  // Save the drawing file
+  // Initialize database first (creates directory if needed)
+  const db = await getDatabase();
+
+  // Write the drawing file
+  const drawingPath = getDrawingPath(drawingId);
   await fs.writeFile(drawingPath, JSON.stringify(parsedData, null, 2), 'utf-8');
 
-  // Load existing metadata to preserve created_at, or create new
-  const existingMetadata = await loadMetadata(drawingId);
+  // Build metadata (upsert)
+  const existingIndex = db.data.drawings.findIndex((d) => d.id === drawingId);
+  const existingMetadata = existingIndex >= 0 ? db.data.drawings[existingIndex] : null;
   const safeTitle = title?.trim() || `Drawing ${drawingId.substring(0, 8)}`;
   const now = new Date().toISOString();
 
   const metadata: DrawingMetadata = existingMetadata
-    ? {
-        ...existingMetadata,
-        title: safeTitle,
-        updated_at: now,
-      }
-    : {
-        id: drawingId,
-        title: safeTitle,
-        created_at: now,
-        updated_at: now,
-      };
+    ? { ...existingMetadata, title: safeTitle, updated_at: now }
+    : { id: drawingId, title: safeTitle, created_at: now, updated_at: now };
 
-  // Save metadata to database (upsert)
-  const db = await getDatabase();
-  const existingIndex = db.data.drawings.findIndex((d) => d.id === drawingId);
   if (existingIndex >= 0) {
     db.data.drawings[existingIndex] = metadata;
   } else {
@@ -206,28 +179,14 @@ export async function listDrawings(options?: {
   }
 }
 
-// Cache host and port to avoid reading env vars on every call
-let cachedHost: string | null = null;
-let cachedPort: string | null = null;
-
-/**
- * Gets the cached or current host and port values
- */
-function getHostAndPort(): { host: string; port: string } {
-  if (cachedHost === null || cachedPort === null) {
-    cachedHost = process.env.HOST || DEFAULT_HOST;
-    cachedPort = process.env.PORT || DEFAULT_PORT;
-  }
-  return { host: cachedHost, port: cachedPort };
-}
-
 /**
  * Generates a URL for a drawing
  * @param drawingId - The drawing ID
  * @returns The full URL to access the drawing
  */
 export function generateUrl(drawingId: string) {
-  const { host, port } = getHostAndPort();
+  const host = process.env.HOST || DEFAULT_HOST;
+  const port = process.env.PORT || DEFAULT_PORT;
   return `http://${host}:${port}/drawing/${drawingId}`;
 }
 

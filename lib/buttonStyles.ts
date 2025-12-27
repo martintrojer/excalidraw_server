@@ -38,23 +38,3 @@ export const dangerButtonStyle: CSSProperties = {
   background: 'var(--danger)',
   color: 'white',
 };
-
-export const disabledButtonStyle: CSSProperties = {
-  ...baseButtonStyle,
-  background: '#1a1a1a',
-  color: '#666',
-  cursor: 'not-allowed',
-};
-
-/**
- * Creates a button style with optional overrides
- * @param baseStyle - Base style to extend
- * @param overrides - Style overrides to apply
- * @returns Combined style object
- */
-export function createButtonStyle(
-  baseStyle: CSSProperties,
-  overrides?: CSSProperties
-): CSSProperties {
-  return { ...baseButtonStyle, ...baseStyle, ...overrides };
-}
