@@ -44,6 +44,7 @@ export function useDrawing({ drawingId, isNew }: UseDrawingOptions) {
   const [status, setStatus] = useState<Status | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   // Drawing Data State - manages the drawing content and metadata
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
@@ -67,9 +68,20 @@ export function useDrawing({ drawingId, isNew }: UseDrawingOptions) {
     async function loadDrawing() {
       try {
         setLoading(true);
+        setNotFound(false);
         isInitializingRef.current = true;
         const response = await fetch(`/api/drawings/${drawingId}`);
         const result = await response.json();
+
+        // Handle 404 - drawing not found
+        if (
+          response.status === 404 ||
+          (!result.success && result.error === ERROR_MESSAGES.DRAWING_NOT_FOUND)
+        ) {
+          setNotFound(true);
+          setInitialDataLoaded(false);
+          return;
+        }
 
         if (result.success && result.drawing) {
           const loadedElements = result.drawing.elements || [];
@@ -97,6 +109,9 @@ export function useDrawing({ drawingId, isNew }: UseDrawingOptions) {
           }
 
           setInitialDataLoaded(true);
+        } else {
+          // Other errors
+          setStatus({ message: result.error || ERROR_MESSAGES.LOADING_DRAWING, type: 'error' });
         }
       } catch (error) {
         console.error('Error loading drawing:', error);
@@ -233,6 +248,7 @@ export function useDrawing({ drawingId, isNew }: UseDrawingOptions) {
     drawingTitle,
     isSaving,
     isDeleting,
+    notFound,
     handleChange,
     saveDrawing,
     deleteDrawing,

@@ -32,6 +32,7 @@ export default function DrawingPage() {
     initialDataLoaded,
     drawingTitle,
     isSaving,
+    notFound,
     handleChange,
     saveDrawing,
     deleteDrawing,
@@ -60,8 +61,130 @@ export default function DrawingPage() {
     setShowDeleteConfirm(false);
   };
 
-  if (loading || (!isNew && !initialDataLoaded)) {
+  if (loading || (!isNew && !initialDataLoaded && !notFound)) {
     return <LoadingSpinner message="Loading drawing..." />;
+  }
+
+  // Show not found error message
+  if (notFound && !isNew) {
+    return (
+      <ErrorBoundary>
+        <div
+          style={{
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--bg-primary)',
+            color: 'var(--text-primary)',
+            padding: '20px',
+            gap: '20px',
+          }}
+        >
+          <div
+            style={{
+              textAlign: 'center',
+              maxWidth: '500px',
+            }}
+          >
+            <h1
+              style={{
+                fontSize: '32px',
+                margin: '0 0 16px 0',
+                color: 'var(--text-primary)',
+              }}
+            >
+              Drawing Not Found
+            </h1>
+            <p
+              style={{
+                fontSize: '16px',
+                color: 'var(--text-secondary)',
+                margin: '0 0 30px 0',
+                lineHeight: '1.5',
+              }}
+            >
+              The drawing with ID <code style={{ color: 'var(--text-primary)' }}>{drawingId}</code>{' '}
+              could not be found. It may have been deleted, the URL is incorrect, or the{' '}
+              <code style={{ color: 'var(--text-primary)' }}>DRAWINGS_DIR</code> environment
+              variable may not be configured correctly.
+            </p>
+            <div
+              style={{
+                fontSize: '14px',
+                color: 'var(--text-muted)',
+                margin: '0 0 30px 0',
+                padding: '16px',
+                background: 'var(--bg-secondary)',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                textAlign: 'left',
+                maxWidth: '600px',
+              }}
+            >
+              <strong
+                style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}
+              >
+                Troubleshooting:
+              </strong>
+              <ul style={{ margin: '0', paddingLeft: '20px', lineHeight: '1.6' }}>
+                <li>
+                  Verify the <code style={{ color: 'var(--text-primary)' }}>DRAWINGS_DIR</code>{' '}
+                  environment variable is set correctly in your{' '}
+                  <code style={{ color: 'var(--text-primary)' }}>.env</code> file
+                </li>
+                <li>Ensure the drawings directory exists and contains the drawing file</li>
+                <li>
+                  Check that the drawing file{' '}
+                  <code style={{ color: 'var(--text-primary)' }}>{drawingId}.excalidraw</code>{' '}
+                  exists in the configured directory
+                </li>
+              </ul>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+              }}
+            >
+              <button
+                onClick={handleList}
+                style={{
+                  padding: '12px 24px',
+                  background: 'var(--success)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                }}
+              >
+                View All Drawings
+              </button>
+              <button
+                onClick={handleNew}
+                style={{
+                  padding: '12px 24px',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                }}
+              >
+                Create New Drawing
+              </button>
+            </div>
+          </div>
+        </div>
+      </ErrorBoundary>
+    );
   }
 
   return (
