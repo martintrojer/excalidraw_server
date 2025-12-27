@@ -21,12 +21,27 @@ import type {
 export const revalidate = 60; // Revalidate every 60 seconds
 
 // GET /api/drawings
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await ensureDrawingsDir();
-    const drawings = await listDrawings();
 
-    const drawingsWithUrls = drawings.map((drawing: DrawingMetadata) => ({
+    // Parse query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '12', 10);
+    const search = searchParams.get('search') || undefined;
+
+    // Validate pagination parameters
+    const validPage = Math.max(1, page);
+    const validLimit = Math.max(1, Math.min(100, limit)); // Cap at 100 items per page
+
+    const result = await listDrawings({
+      page: validPage,
+      limit: validLimit,
+      search,
+    });
+
+    const drawingsWithUrls = result.drawings.map((drawing: DrawingMetadata) => ({
       ...drawing,
       url: generateUrl(drawing.id),
       markdownLink: generateMarkdownLink(drawing.title, drawing.id),
@@ -35,7 +50,10 @@ export async function GET() {
     const response: ListDrawingsResponse = {
       success: true,
       drawings: drawingsWithUrls,
-      count: drawingsWithUrls.length,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
     };
 
     // Add cache headers for client-side caching

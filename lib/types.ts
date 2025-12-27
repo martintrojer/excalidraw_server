@@ -151,7 +151,10 @@ export interface ApiSuccessResponse {
 // GET /api/drawings
 export interface ListDrawingsResponse extends ApiSuccessResponse {
   drawings: Drawing[];
-  count: number;
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 // POST /api/drawings

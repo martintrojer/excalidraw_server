@@ -144,21 +144,62 @@ export async function saveDrawing(
 }
 
 /**
- * Lists all drawings from the database
- * @returns Array of drawing metadata, sorted by most recently updated first
+ * Lists drawings from the database with pagination and optional search
+ * @param options - Pagination and search options
+ * @returns Object containing paginated drawings and metadata
  */
-export async function listDrawings(): Promise<DrawingMetadata[]> {
+export async function listDrawings(options?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}): Promise<{
+  drawings: DrawingMetadata[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}> {
   try {
     await ensureDrawingsDir();
     const dbData = await getDatabaseData();
 
     // Sort by most recently updated first
-    return [...dbData.drawings].sort(
+    let drawings = [...dbData.drawings].sort(
       (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     );
+
+    // Apply search filter if provided
+    if (options?.search && options.search.trim()) {
+      const searchLower = options.search.toLowerCase().trim();
+      drawings = drawings.filter((drawing) => drawing.title.toLowerCase().includes(searchLower));
+    }
+
+    const total = drawings.length;
+    const page = options?.page || 1;
+    const limit = options?.limit || 12;
+    const totalPages = Math.ceil(total / limit);
+
+    // Apply pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedDrawings = drawings.slice(startIndex, endIndex);
+
+    return {
+      drawings: paginatedDrawings,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   } catch (error) {
     console.error('Error listing drawings:', error);
-    return [];
+    return {
+      drawings: [],
+      total: 0,
+      page: options?.page || 1,
+      limit: options?.limit || 12,
+      totalPages: 0,
+    };
   }
 }
 

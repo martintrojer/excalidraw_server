@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import LoadingSkeleton from './LoadingSkeleton';
 import type { Drawing } from '@/lib/types';
@@ -15,16 +15,31 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, DEBOUNCE_DELAY_MS);
 
+  // Fetch drawings with pagination and search
   useEffect(() => {
     async function fetchDrawings() {
+      setLoading(true);
       try {
-        const response = await fetch('/api/drawings');
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          limit: ITEMS_PER_PAGE.toString(),
+        });
+        if (debouncedSearchQuery.trim()) {
+          params.append('search', debouncedSearchQuery.trim());
+        }
+
+        const response = await fetch(`/api/drawings?${params.toString()}`);
         const result = await response.json();
         if (result.success) {
           setDrawings(result.drawings);
+          setTotal(result.total);
+          setTotalPages(result.totalPages);
+          setCurrentPage(result.page);
         }
       } catch (error) {
         console.error('Error fetching drawings:', error);
@@ -33,27 +48,12 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
       }
     }
     fetchDrawings();
-  }, []);
+  }, [currentPage, debouncedSearchQuery]);
 
-  // Filter drawings based on debounced search query
-  const filteredDrawings = useMemo(() => {
-    if (!debouncedSearchQuery.trim()) {
-      return drawings;
-    }
-    const query = debouncedSearchQuery.toLowerCase().trim();
-    return drawings.filter((drawing) => drawing.title.toLowerCase().includes(query));
-  }, [drawings, debouncedSearchQuery]);
-
-  // Reset to page 1 when debounced search changes
+  // Reset to page 1 when search query changes
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearchQuery]);
-
-  // Calculate pagination based on filtered drawings
-  const totalPages = Math.ceil(filteredDrawings.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentDrawings = filteredDrawings.slice(startIndex, endIndex);
 
   if (loading) {
     return <LoadingSkeleton />;
@@ -114,12 +114,11 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
             fontSize: '14px',
           }}
         >
-          Found {filteredDrawings.length} drawing{filteredDrawings.length !== 1 ? 's' : ''} matching
-          &quot;{debouncedSearchQuery}&quot;
+          Found {total} drawing{total !== 1 ? 's' : ''} matching &quot;{debouncedSearchQuery}&quot;
         </div>
       )}
 
-      {drawings.length === 0 ? (
+      {!loading && total === 0 && !debouncedSearchQuery ? (
         <div
           style={{
             textAlign: 'center',
@@ -129,7 +128,7 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
         >
           No drawings yet. Create your first drawing!
         </div>
-      ) : filteredDrawings.length === 0 ? (
+      ) : !loading && total === 0 && debouncedSearchQuery ? (
         <div
           style={{
             textAlign: 'center',
@@ -149,7 +148,7 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
               marginBottom: '30px',
             }}
           >
-            {currentDrawings.map((drawing) => (
+            {drawings.map((drawing) => (
               <div
                 key={drawing.id}
                 onClick={() => onSelectDrawing(drawing.id)}
@@ -299,11 +298,9 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
               marginTop: '10px',
             }}
           >
-            Showing {startIndex + 1}-{Math.min(endIndex, filteredDrawings.length)} of{' '}
-            {filteredDrawings.length} drawing{filteredDrawings.length !== 1 ? 's' : ''}
-            {debouncedSearchQuery && drawings.length !== filteredDrawings.length && (
-              <span> (filtered from {drawings.length} total)</span>
-            )}
+            Showing {drawings.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0}-
+            {Math.min(currentPage * ITEMS_PER_PAGE, total)} of {total} drawing
+            {total !== 1 ? 's' : ''}
           </div>
         </>
       )}
