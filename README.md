@@ -29,13 +29,13 @@ For a quick setup without needing Node.js development tools, you can download a 
 
 1. **Download the release:**
    - Go to the [Releases page](https://github.com/martintrojer/excalidraw_server/releases)
-   - Download the `excalidraw-server-0.1.0.tar.gz` file (or the latest version)
+   - Download the `excalidraw-server-0.2.0.tar.gz` file (or the latest version)
 
 2. **Extract the archive:**
 
    ```bash
-   tar -xzf excalidraw-server-0.1.0.tar.gz
-   cd excalidraw-server-0.1.0
+   tar -xzf excalidraw-server-0.2.0.tar.gz
+   cd excalidraw-server-0.2.0
    ```
 
 3. **Configure environment variables:**
