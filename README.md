@@ -131,3 +131,88 @@ To avoid using `127.0.0.1` in your note links, you can set up a local DNS entry 
 4. Restart the server. Now your drawings will be accessible at `http://excalidraw.local:9876` instead of `http://127.0.0.1:9876`.
 
 **Note:** The markdown links generated when saving drawings will now use the cleaner `excalidraw.local` domain instead of the IP address.
+
+## Maintenance
+
+### Rebuilding Metadata Database
+
+The server uses a `metadata.json` file to track all drawings. If you have existing `.excalidraw` files in your `DRAWINGS_DIR` that aren't in the database, or if you need to clean up orphaned database entries, you can use the rebuild script.
+
+**When to use:**
+
+- After manually adding `.excalidraw` files to the drawings directory
+- To clean up database entries for files that no longer exist
+- To rebuild the database after moving or reorganizing drawings
+- To automatically rename files to UUID format (if they don't already use UUIDs)
+
+**File Naming:**
+
+- Drawing files should be named with valid UUID v4 format (e.g., `550e8400-e29b-41d4-a716-446655440000.excalidraw`)
+- **Automatic Renaming**: Files that don't match UUID format will be automatically renamed to UUID format
+- If a file has existing metadata with the old filename, it will be migrated to use the new UUID
+
+**Title Rules:**
+
+The script follows specific rules for setting titles in the database:
+
+1. **Files being renamed to UUID**: The original filename (without `.excalidraw` extension) is used as the title
+   - Example: `my-drawing.excalidraw` → renamed to `550e8400-...excalidraw` → title: `"my-drawing"`
+
+2. **Files already with UUID names**: Uses `imported-{timestamp}` as the title (timestamp ensures uniqueness)
+   - Example: `550e8400-...excalidraw` → title: `"imported-1706380800000"`
+
+3. **Existing metadata**: Preserved when found (including when migrating from old filename to new UUID)
+
+**Important**: UUIDs are never used as titles in the database. The script ensures meaningful titles are always assigned.
+
+**Usage:**
+
+```bash
+# Dry run (default) - shows what would be done without making changes
+npm run rebuild-metadata
+
+# Actually apply the changes
+npm run rebuild-metadata -- --execute
+```
+
+**What it does:**
+
+- 🔄 **Renames files to UUID format**: Automatically generates UUIDs and renames files that don't match UUID naming convention
+- ✅ **Adds missing entries**: Creates metadata for `.excalidraw` files that don't have database entries
+- 🔄 **Preserves existing metadata**: Keeps existing metadata (title, dates, etc.) - doesn't overwrite
+- 🔄 **Migrates metadata**: If a file is renamed, existing metadata for the old filename is updated to use the new UUID
+- ❌ **Removes orphaned entries**: Deletes database entries for files that no longer exist
+- 💾 **Backs up database**: In execute mode, creates a timestamped backup before making changes
+
+**Example output (dry run):**
+
+```
+🔍 Rebuilding metadata database...
+
+📁 Drawings directory: /path/to/drawings
+📄 Database path: /path/to/drawings/metadata.json
+🔧 Mode: DRY RUN (use --execute to apply changes)
+
+📊 Existing metadata entries: 5
+📝 Found .excalidraw files: 7
+
+📋 Changes to be made:
+  🔄 Rename files: 1
+  ✅ Add new entries: 2
+  🔄 Keep existing entries: 5
+  ❌ Remove orphaned entries: 1
+
+📝 Files to rename (to UUID format):
+  my-drawing.excalidraw → 550e8400-e29b-41d4-a716-446655440000.excalidraw
+
+📝 New metadata entries to add:
+  + 550e8400-e29b-41d4-a716-446655440000: "my-drawing" (created: 2025-01-27T...)
+  + 6ba7b810-9dad-11d1-80b4-00c04fd430c8: "imported-1706380800000" (created: 2025-01-27T...)
+
+🗑️  Orphaned entries to remove:
+  - 123e4567-e89b-12d3-a456-426614174000: "Old Drawing"
+
+💡 This is a dry run. Use --execute to apply these changes.
+```
+
+**Note:** The script sets both `created_at` and `updated_at` to the current time for new entries. Titles follow the rules above - original filenames for renamed files, or `imported-{timestamp}` for files that already have UUID names.
