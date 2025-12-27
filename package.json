@@ -1,6 +1,6 @@
 {
   "name": "excalidraw-server",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Next.js version of Excalidraw webapp",
   "scripts": {
     "dev": "next dev -p 9876",

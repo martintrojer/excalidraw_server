@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2025-12-27
+
+### Added
+
+- **Metadata Rebuild Script**: New `rebuild-metadata` script to rebuild metadata database from `.excalidraw` files
+  - Automatically renames non-UUID files to UUID format
+  - Creates metadata entries for files missing from database
+  - Removes orphaned database entries
+  - Dry run mode by default with `--execute` flag to apply changes
+  - Backs up database before making changes
+  - Expands environment variables in `DRAWINGS_DIR` (e.g., `$HOME`, `${HOME}`)
+- **Improved Error Handling**: Better error messages for non-existent drawings with troubleshooting guidance for `DRAWINGS_DIR` configuration
+
+### Changed
+
+- **Title Assignment Rules**: Metadata rebuild script follows strict title rules:
+  - Files renamed to UUID: Use original filename as title
+  - Files with existing UUID names: Use `imported-{timestamp}` as title
+  - UUIDs are never used as titles in the database
+- **Error Messages**: Enhanced "Drawing Not Found" error page with troubleshooting steps for `DRAWINGS_DIR` misconfiguration
+
+### Technical
+
+- Added `rebuild-metadata` npm script
+- Environment variable expansion in rebuild script supports `$VAR`, `${VAR}`, and `${VAR:-default}` syntax
+- Automatic UUID generation and file renaming for non-compliant filenames
+
 ## [0.2.1] - 2025-12-27
 
 ### Removed
