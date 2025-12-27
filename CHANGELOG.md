@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-12-27
+
+### Removed
+
+- **Unused Error Classes**: Removed `lib/errors.ts` file containing unused error classes (`ValidationError`, `NotFoundError`, `InternalServerError`)
+- **Unused Functions**: Removed `createButtonStyle()` and `disabledButtonStyle` from button styles
+- **Unused Validation**: Removed `validateEnvironment()` function that only re-threw errors
+
+### Changed
+
+- **Performance**: Optimized `saveDrawing()` to reduce database operations from 3 to 1
+- **Performance**: Replaced `loadDrawing()` with `fs.access()` in PUT route for faster existence checks
+- **Code Quality**: Removed duplicate directory creation logic (consolidated into `getDatabase()`)
+- **Code Quality**: Removed unnecessary host/port caching (env vars already cached by Node.js)
+- **Code Quality**: Removed redundant validation checks in `saveDrawing()`
+
+### Technical
+
+- Consolidated directory creation to single source (`getDatabase()`)
+- Simplified PUT route to only load metadata when needed
+- Reduced redundant file system and database operations
+
 ## [0.2.0] - 2025-12-27
 
 ### Added
