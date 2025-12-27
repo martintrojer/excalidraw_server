@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  listDrawings,
-  saveDrawing,
-  generateUrl,
-  generateMarkdownLink,
-  ensureDrawingsDir,
-} from '@/lib/drawings';
+import { listDrawings, saveDrawing, generateUrl, generateMarkdownLink } from '@/lib/drawings';
 import { ERROR_MESSAGES, getErrorMessage } from '@/lib/errorMessages';
-import { parseRequestBody, validateDrawingRequest } from '@/lib/apiHelpers';
+import { parseRequestBody, validateDrawingRequest, createErrorResponse } from '@/lib/apiHelpers';
 import type {
   DrawingMetadata,
   ListDrawingsResponse,
   CreateDrawingRequest,
   CreateDrawingResponse,
-  ApiErrorResponse,
 } from '@/lib/types';
 
 // Configure caching for this route
@@ -23,8 +16,6 @@ export const revalidate = 0; // Always fetch fresh data (no server-side caching)
 // GET /api/drawings
 export async function GET(request: NextRequest) {
   try {
-    await ensureDrawingsDir();
-
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -64,19 +55,13 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: unknown) {
     console.error('Error listing drawings:', error);
-    const errorResponse: ApiErrorResponse = {
-      success: false,
-      error: getErrorMessage(error),
-    };
-    return NextResponse.json(errorResponse, { status: 500 });
+    return createErrorResponse(getErrorMessage(error) || ERROR_MESSAGES.INTERNAL_ERROR, 500);
   }
 }
 
 // POST /api/drawings
 export async function POST(request: NextRequest) {
   try {
-    await ensureDrawingsDir();
-
     // Parse and validate request body
     const parseResult = await parseRequestBody<CreateDrawingRequest>(request);
     if ('error' in parseResult) {
@@ -97,18 +82,14 @@ export async function POST(request: NextRequest) {
 
     const response: CreateDrawingResponse = {
       success: true,
-      drawingId: drawingId,
+      drawingId,
       url: generateUrl(drawingId),
       markdownLink: generateMarkdownLink(metadata.title, drawingId),
-      metadata: metadata,
+      metadata,
     };
     return NextResponse.json(response, { status: 201 });
   } catch (error: unknown) {
     console.error('Error creating drawing:', error);
-    const errorResponse: ApiErrorResponse = {
-      success: false,
-      error: getErrorMessage(error) || ERROR_MESSAGES.INTERNAL_ERROR,
-    };
-    return NextResponse.json(errorResponse, { status: 500 });
+    return createErrorResponse(getErrorMessage(error) || ERROR_MESSAGES.INTERNAL_ERROR, 500);
   }
 }

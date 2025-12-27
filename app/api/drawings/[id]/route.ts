@@ -9,15 +9,18 @@ import {
   generateMarkdownLink,
 } from '@/lib/drawings';
 import { getDatabase, saveDatabase } from '@/lib/db';
-import { isValidDrawingId } from '@/lib/validation';
 import { ERROR_MESSAGES, getErrorMessage } from '@/lib/errorMessages';
-import { parseRequestBody, validateDrawingRequest } from '@/lib/apiHelpers';
+import {
+  parseRequestBody,
+  validateDrawingRequest,
+  createErrorResponse,
+  validateDrawingId,
+} from '@/lib/apiHelpers';
 import type {
   GetDrawingResponse,
   UpdateDrawingRequest,
   UpdateDrawingResponse,
   DeleteDrawingResponse,
-  ApiErrorResponse,
 } from '@/lib/types';
 
 // GET /api/drawings/:id
@@ -26,22 +29,15 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const { id: drawingId } = await params;
 
     // Validate drawing ID
-    if (!isValidDrawingId(drawingId)) {
-      const errorResponse: ApiErrorResponse = {
-        success: false,
-        error: ERROR_MESSAGES.INVALID_DRAWING_ID,
-      };
-      return NextResponse.json(errorResponse, { status: 400 });
+    const idValidationError = validateDrawingId(drawingId);
+    if (idValidationError) {
+      return idValidationError;
     }
 
     const drawing = await loadDrawing(drawingId);
 
     if (!drawing) {
-      const errorResponse: ApiErrorResponse = {
-        success: false,
-        error: ERROR_MESSAGES.DRAWING_NOT_FOUND,
-      };
-      return NextResponse.json(errorResponse, { status: 404 });
+      return createErrorResponse(ERROR_MESSAGES.DRAWING_NOT_FOUND, 404);
     }
 
     // Load metadata
@@ -49,19 +45,15 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     const response: GetDrawingResponse = {
       success: true,
-      drawingId: drawingId,
-      drawing: drawing,
-      metadata: metadata,
+      drawingId,
+      drawing,
+      metadata,
       url: generateUrl(drawingId),
     };
     return NextResponse.json(response);
   } catch (error: unknown) {
     console.error('Error getting drawing:', error);
-    const errorResponse: ApiErrorResponse = {
-      success: false,
-      error: getErrorMessage(error),
-    };
-    return NextResponse.json(errorResponse, { status: 500 });
+    return createErrorResponse(getErrorMessage(error) || ERROR_MESSAGES.INTERNAL_ERROR, 500);
   }
 }
 
@@ -71,12 +63,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id: drawingId } = await params;
 
     // Validate drawing ID
-    if (!isValidDrawingId(drawingId)) {
-      const errorResponse: ApiErrorResponse = {
-        success: false,
-        error: ERROR_MESSAGES.INVALID_DRAWING_ID,
-      };
-      return NextResponse.json(errorResponse, { status: 400 });
+    const idValidationError = validateDrawingId(drawingId);
+    if (idValidationError) {
+      return idValidationError;
     }
 
     // Parse and validate request body
@@ -97,11 +86,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Check if drawing exists
     const existingDrawing = await loadDrawing(drawingId);
     if (!existingDrawing) {
-      const errorResponse: ApiErrorResponse = {
-        success: false,
-        error: ERROR_MESSAGES.DRAWING_NOT_FOUND,
-      };
-      return NextResponse.json(errorResponse, { status: 404 });
+      return createErrorResponse(ERROR_MESSAGES.DRAWING_NOT_FOUND, 404);
     }
 
     // If title is not provided, preserve existing title
@@ -116,19 +101,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const response: UpdateDrawingResponse = {
       success: true,
-      drawingId: drawingId,
+      drawingId,
       url: generateUrl(drawingId),
       markdownLink: generateMarkdownLink(metadata.title, drawingId),
-      metadata: metadata,
+      metadata,
     };
     return NextResponse.json(response);
   } catch (error: unknown) {
     console.error('Error updating drawing:', error);
-    const errorResponse: ApiErrorResponse = {
-      success: false,
-      error: getErrorMessage(error),
-    };
-    return NextResponse.json(errorResponse, { status: 500 });
+    return createErrorResponse(getErrorMessage(error) || ERROR_MESSAGES.INTERNAL_ERROR, 500);
   }
 }
 
@@ -141,12 +122,9 @@ export async function DELETE(
     const { id: drawingId } = await params;
 
     // Validate drawing ID
-    if (!isValidDrawingId(drawingId)) {
-      const errorResponse: ApiErrorResponse = {
-        success: false,
-        error: ERROR_MESSAGES.INVALID_DRAWING_ID,
-      };
-      return NextResponse.json(errorResponse, { status: 400 });
+    const idValidationError = validateDrawingId(drawingId);
+    if (idValidationError) {
+      return idValidationError;
     }
 
     const drawingPath = getDrawingPath(drawingId);
@@ -154,11 +132,7 @@ export async function DELETE(
     try {
       await fs.access(drawingPath);
     } catch {
-      const errorResponse: ApiErrorResponse = {
-        success: false,
-        error: ERROR_MESSAGES.DRAWING_NOT_FOUND,
-      };
-      return NextResponse.json(errorResponse, { status: 404 });
+      return createErrorResponse(ERROR_MESSAGES.DRAWING_NOT_FOUND, 404);
     }
 
     // Delete the drawing file
@@ -176,10 +150,6 @@ export async function DELETE(
     return NextResponse.json(response);
   } catch (error: unknown) {
     console.error('Error deleting drawing:', error);
-    const errorResponse: ApiErrorResponse = {
-      success: false,
-      error: getErrorMessage(error),
-    };
-    return NextResponse.json(errorResponse, { status: 500 });
+    return createErrorResponse(getErrorMessage(error) || ERROR_MESSAGES.INTERNAL_ERROR, 500);
   }
 }

@@ -94,6 +94,8 @@ export async function saveDrawing(
     throw new Error('Invalid drawing ID');
   }
 
+  // Ensure directory exists before writing file
+  await ensureDrawingsDir();
   const drawingPath = getDrawingPath(drawingId);
 
   // Ensure drawingData is an object
@@ -115,22 +117,23 @@ export async function saveDrawing(
 
   // Load existing metadata to preserve created_at, or create new
   const existingMetadata = await loadMetadata(drawingId);
-  const safeTitle = title && title.trim() ? title.trim() : `Drawing ${drawingId.substring(0, 8)}`;
+  const safeTitle = title?.trim() || `Drawing ${drawingId.substring(0, 8)}`;
+  const now = new Date().toISOString();
 
   const metadata: DrawingMetadata = existingMetadata
     ? {
         ...existingMetadata,
         title: safeTitle,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       }
     : {
         id: drawingId,
         title: safeTitle,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: now,
+        updated_at: now,
       };
 
-  // Save metadata to database
+  // Save metadata to database (upsert)
   const db = await getDatabase();
   const existingIndex = db.data.drawings.findIndex((d) => d.id === drawingId);
   if (existingIndex >= 0) {
@@ -160,7 +163,7 @@ export async function listDrawings(options?: {
   totalPages: number;
 }> {
   try {
-    await ensureDrawingsDir();
+    // getDatabaseData() ensures the directory exists via getDatabase()
     const dbData = await getDatabaseData();
 
     // Sort by most recently updated first
@@ -203,16 +206,28 @@ export async function listDrawings(options?: {
   }
 }
 
+// Cache host and port to avoid reading env vars on every call
+let cachedHost: string | null = null;
+let cachedPort: string | null = null;
+
+/**
+ * Gets the cached or current host and port values
+ */
+function getHostAndPort(): { host: string; port: string } {
+  if (cachedHost === null || cachedPort === null) {
+    cachedHost = process.env.HOST || DEFAULT_HOST;
+    cachedPort = process.env.PORT || DEFAULT_PORT;
+  }
+  return { host: cachedHost, port: cachedPort };
+}
+
 /**
  * Generates a URL for a drawing
  * @param drawingId - The drawing ID
  * @returns The full URL to access the drawing
  */
 export function generateUrl(drawingId: string) {
-  // Read HOST and PORT from environment variables (e.g., from .env file)
-  // This allows users to set HOST=excalidraw.local for cleaner URLs in notes
-  const host = process.env.HOST || DEFAULT_HOST;
-  const port = process.env.PORT || DEFAULT_PORT;
+  const { host, port } = getHostAndPort();
   return `http://${host}:${port}/drawing/${drawingId}`;
 }
 

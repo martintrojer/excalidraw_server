@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import LoadingSkeleton from './LoadingSkeleton';
 import type { Drawing } from '@/lib/types';
@@ -28,10 +28,12 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
     setCurrentPage(1);
   }, [normalizedSearchQuery]);
 
-  // Fetch drawings with pagination and search from server API
-  useEffect(() => {
-    async function fetchDrawings() {
-      setLoading(true);
+  // Centralized fetch function to eliminate duplication
+  const fetchDrawings = useCallback(
+    async (showLoading = true) => {
+      if (showLoading) {
+        setLoading(true);
+      }
       try {
         const params = new URLSearchParams({
           page: currentPage.toString(),
@@ -60,42 +62,24 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
       } catch (error) {
         console.error('Error fetching drawings:', error);
       } finally {
-        setLoading(false);
+        if (showLoading) {
+          setLoading(false);
+        }
       }
-    }
+    },
+    [currentPage, normalizedSearchQuery]
+  );
+
+  // Fetch drawings with pagination and search from server API
+  useEffect(() => {
     fetchDrawings();
-  }, [currentPage, normalizedSearchQuery]);
+  }, [fetchDrawings]);
 
   // Refresh data when page becomes visible (e.g., user navigates back from editing)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Refetch drawings when page becomes visible
-        async function refreshDrawings() {
-          try {
-            const params = new URLSearchParams({
-              page: currentPage.toString(),
-              limit: ITEMS_PER_PAGE.toString(),
-            });
-            if (normalizedSearchQuery) {
-              params.append('search', normalizedSearchQuery);
-            }
-            params.append('_t', Date.now().toString());
-
-            const response = await fetch(`/api/drawings?${params.toString()}`, {
-              cache: 'no-store',
-            });
-            const result = await response.json();
-            if (result.success) {
-              setDrawings(result.drawings);
-              setTotal(result.total);
-              setTotalPages(result.totalPages);
-            }
-          } catch (error) {
-            console.error('Error refreshing drawings:', error);
-          }
-        }
-        refreshDrawings();
+        fetchDrawings(false); // Don't show loading spinner on visibility refresh
       }
     };
 
@@ -103,7 +87,7 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [currentPage, normalizedSearchQuery]);
+  }, [fetchDrawings]);
 
   if (loading) {
     return <LoadingSkeleton />;
