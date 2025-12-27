@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import LoadingSkeleton from './LoadingSkeleton';
 import type { Drawing } from '@/lib/types';
@@ -20,7 +20,15 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, DEBOUNCE_DELAY_MS);
 
-  // Fetch drawings with pagination and search
+  // Normalize search query to ensure stable dependency
+  const normalizedSearchQuery = useMemo(() => debouncedSearchQuery.trim(), [debouncedSearchQuery]);
+
+  // Reset to page 1 when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [normalizedSearchQuery]);
+
+  // Fetch drawings with pagination and search from server API
   useEffect(() => {
     async function fetchDrawings() {
       setLoading(true);
@@ -29,17 +37,25 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
           page: currentPage.toString(),
           limit: ITEMS_PER_PAGE.toString(),
         });
-        if (debouncedSearchQuery.trim()) {
-          params.append('search', debouncedSearchQuery.trim());
+        // Add search parameter if provided (server-side search)
+        if (normalizedSearchQuery) {
+          params.append('search', normalizedSearchQuery);
         }
+        // Add cache-busting timestamp to ensure fresh data
+        params.append('_t', Date.now().toString());
 
-        const response = await fetch(`/api/drawings?${params.toString()}`);
+        const response = await fetch(`/api/drawings?${params.toString()}`, {
+          cache: 'no-store', // Bypass browser cache to get fresh data
+        });
         const result = await response.json();
         if (result.success) {
           setDrawings(result.drawings);
           setTotal(result.total);
           setTotalPages(result.totalPages);
-          setCurrentPage(result.page);
+          // Ensure currentPage matches server response
+          if (result.page !== currentPage) {
+            setCurrentPage(result.page);
+          }
         }
       } catch (error) {
         console.error('Error fetching drawings:', error);
@@ -48,12 +64,46 @@ export default function DrawingsList({ onSelectDrawing }: DrawingsListProps) {
       }
     }
     fetchDrawings();
-  }, [currentPage, debouncedSearchQuery]);
+  }, [currentPage, normalizedSearchQuery]);
 
-  // Reset to page 1 when search query changes
+  // Refresh data when page becomes visible (e.g., user navigates back from editing)
   useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearchQuery]);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Refetch drawings when page becomes visible
+        async function refreshDrawings() {
+          try {
+            const params = new URLSearchParams({
+              page: currentPage.toString(),
+              limit: ITEMS_PER_PAGE.toString(),
+            });
+            if (normalizedSearchQuery) {
+              params.append('search', normalizedSearchQuery);
+            }
+            params.append('_t', Date.now().toString());
+
+            const response = await fetch(`/api/drawings?${params.toString()}`, {
+              cache: 'no-store',
+            });
+            const result = await response.json();
+            if (result.success) {
+              setDrawings(result.drawings);
+              setTotal(result.total);
+              setTotalPages(result.totalPages);
+            }
+          } catch (error) {
+            console.error('Error refreshing drawings:', error);
+          }
+        }
+        refreshDrawings();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [currentPage, normalizedSearchQuery]);
 
   if (loading) {
     return <LoadingSkeleton />;

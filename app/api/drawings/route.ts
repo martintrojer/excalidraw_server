@@ -18,7 +18,7 @@ import type {
 } from '@/lib/types';
 
 // Configure caching for this route
-export const revalidate = 60; // Revalidate every 60 seconds
+export const revalidate = 0; // Always fetch fresh data (no server-side caching)
 
 // GET /api/drawings
 export async function GET(request: NextRequest) {
@@ -56,10 +56,10 @@ export async function GET(request: NextRequest) {
       totalPages: result.totalPages,
     };
 
-    // Add cache headers for client-side caching
+    // Add cache headers - short cache time to ensure fresh data
     return NextResponse.json(response, {
       headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     });
   } catch (error: unknown) {
