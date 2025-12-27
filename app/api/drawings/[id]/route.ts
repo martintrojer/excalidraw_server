@@ -4,11 +4,11 @@ import {
   loadDrawing,
   loadMetadata,
   getDrawingPath,
-  getMetadataPath,
   saveDrawing,
   generateUrl,
   generateMarkdownLink,
 } from '@/lib/drawings';
+import { getDatabase, saveDatabase } from '@/lib/db';
 import { isValidDrawingId } from '@/lib/validation';
 import { ERROR_MESSAGES, getErrorMessage } from '@/lib/errorMessages';
 import { parseRequestBody, validateDrawingRequest } from '@/lib/apiHelpers';
@@ -150,7 +150,6 @@ export async function DELETE(
     }
 
     const drawingPath = getDrawingPath(drawingId);
-    const metadataPath = getMetadataPath(drawingId);
 
     try {
       await fs.access(drawingPath);
@@ -162,12 +161,13 @@ export async function DELETE(
       return NextResponse.json(errorResponse, { status: 404 });
     }
 
+    // Delete the drawing file
     await fs.unlink(drawingPath);
-    try {
-      await fs.unlink(metadataPath);
-    } catch {
-      // Metadata file might not exist, that's okay
-    }
+
+    // Remove metadata from database
+    const db = await getDatabase();
+    db.data.drawings = db.data.drawings.filter((d) => d.id !== drawingId);
+    await saveDatabase();
 
     const response: DeleteDrawingResponse = {
       success: true,

@@ -4,6 +4,7 @@ import { isValidDrawingId } from './validation';
 import type { DrawingMetadata } from './types';
 import { DEFAULT_HOST, DEFAULT_PORT } from './constants';
 import { getDrawingsDir } from './env';
+import { getDatabase, getDatabaseData, saveDatabase } from './db';
 
 // Get drawings directory from environment variable (validated at module load)
 const DRAWINGS_DIR = getDrawingsDir();
@@ -35,20 +36,6 @@ export function getDrawingPath(drawingId: string) {
 }
 
 /**
- * Gets the file path for a drawing's metadata by ID
- * @param drawingId - The drawing ID
- * @returns The file path for the metadata
- * @throws {Error} If the drawing ID is invalid
- */
-export function getMetadataPath(drawingId: string) {
-  if (!isValidDrawingId(drawingId)) {
-    throw new Error('Invalid drawing ID');
-  }
-  // Validation already ensures safe ID (no path traversal)
-  return path.join(DRAWINGS_DIR, `${drawingId}.meta.json`);
-}
-
-/**
  * Loads a drawing from the file system
  * @param drawingId - The drawing ID to load
  * @returns The drawing data, or null if not found or invalid
@@ -72,7 +59,7 @@ export async function loadDrawing(drawingId: string) {
 }
 
 /**
- * Loads drawing metadata from the file system
+ * Loads drawing metadata from the database
  * @param drawingId - The drawing ID
  * @returns The metadata, or null if not found or invalid
  */
@@ -81,14 +68,10 @@ export async function loadMetadata(drawingId: string): Promise<DrawingMetadata |
     return null;
   }
   try {
-    const metadataPath = getMetadataPath(drawingId);
-    const metadataData = await fs.readFile(metadataPath, 'utf-8');
-    return JSON.parse(metadataData) as DrawingMetadata;
+    const dbData = await getDatabaseData();
+    const metadata = dbData.drawings.find((d) => d.id === drawingId);
+    return metadata || null;
   } catch (error) {
-    // If metadata doesn't exist, return null (caller should handle defaults)
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return null;
-    }
     console.error('Error loading metadata:', error);
     return null;
   }
@@ -112,7 +95,6 @@ export async function saveDrawing(
   }
 
   const drawingPath = getDrawingPath(drawingId);
-  const metadataPath = getMetadataPath(drawingId);
 
   // Ensure drawingData is an object
   let parsedData: unknown = drawingData;
@@ -128,7 +110,7 @@ export async function saveDrawing(
     throw new Error('Drawing data must be an object');
   }
 
-  // Save the drawing
+  // Save the drawing file
   await fs.writeFile(drawingPath, JSON.stringify(parsedData, null, 2), 'utf-8');
 
   // Load existing metadata to preserve created_at, or create new
@@ -148,36 +130,32 @@ export async function saveDrawing(
         updated_at: new Date().toISOString(),
       };
 
-  await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2), 'utf-8');
+  // Save metadata to database
+  const db = await getDatabase();
+  const existingIndex = db.data.drawings.findIndex((d) => d.id === drawingId);
+  if (existingIndex >= 0) {
+    db.data.drawings[existingIndex] = metadata;
+  } else {
+    db.data.drawings.push(metadata);
+  }
+  await saveDatabase();
 
   return metadata;
 }
 
 /**
- * Lists all drawings from the file system
+ * Lists all drawings from the database
  * @returns Array of drawing metadata, sorted by most recently updated first
  */
 export async function listDrawings(): Promise<DrawingMetadata[]> {
   try {
     await ensureDrawingsDir();
-    const files = await fs.readdir(DRAWINGS_DIR);
-    const metaFiles = files.filter((f) => f.endsWith('.meta.json'));
+    const dbData = await getDatabaseData();
 
-    const drawings = await Promise.all(
-      metaFiles.map(async (file) => {
-        try {
-          const data = await fs.readFile(path.join(DRAWINGS_DIR, file), 'utf-8');
-          return JSON.parse(data) as DrawingMetadata;
-        } catch (error) {
-          console.error(`Error reading ${file}:`, error);
-          return null;
-        }
-      })
+    // Sort by most recently updated first
+    return [...dbData.drawings].sort(
+      (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     );
-
-    return drawings
-      .filter((d): d is DrawingMetadata => d !== null)
-      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
   } catch (error) {
     console.error('Error listing drawings:', error);
     return [];
