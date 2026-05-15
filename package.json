@@ -1,21 +1,27 @@
 {
-  "name": "xdraw",
-  "version": "0.1.0",
-  "private": true,
+  "name": "@martintrojer/xdraw",
+  "version": "0.4.0",
   "description": "Minimal Excalidraw CLI that opens files in your system browser",
   "type": "module",
-  "packageManager": "bun@1.3.0",
+  "packageManager": "npm@11.12.1",
+  "engines": {
+    "node": ">=24"
+  },
   "bin": {
     "xdraw": "./bin/xdraw.ts"
   },
+  "files": [
+    "bin",
+    "dist/client",
+    "LICENSE.txt",
+    "README.md"
+  ],
   "scripts": {
-    "build": "bun build --target=bun --root . --outdir dist ./bin/xdraw.ts",
-    "build:exe": "bun build --compile --root . ./bin/xdraw.ts --outfile dist/xdraw",
-    "compile": "bun build --compile --root . ./bin/xdraw.ts --outfile dist/xdraw",
-    "dev": "bun --hot ./bin/xdraw.ts",
-    "format": "bunx prettier --write .",
-    "format:check": "bunx prettier --check .",
-    "start": "./bin/xdraw.ts",
+    "build": "vite build",
+    "dev": "npm run build && node --watch ./bin/xdraw.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "start": "node ./bin/xdraw.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
@@ -23,16 +29,20 @@
     "cli"
   ],
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/node": "^25.0.3",
+    "@types/node": "^24.0.0",
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",
-    "bun-types": "^1.3.0",
-    "typescript": "^5.9.3"
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.13"
   }
 }

@@ -8,9 +8,18 @@ No database. No list page. One job only:
 - save back to same file
 - create new file when needed
 
+## Requirements
+
+- Node.js 24+
+- npm 11+ (bundled with Node 24)
+
 ## Install
 
-Download the single-file executable from the Release page or build for source (see below).
+From npm:
+
+```bash
+npm install -g @martintrojer/xdraw
+```
 
 ## Use
 
@@ -26,25 +35,41 @@ Create new file:
 xdraw new sketch.excalidraw
 ```
 
-Both commands launch default browser and keep tiny local Bun server running for save/load.
+Both commands launch the default browser and keep a tiny local Node.js server running for save/load.
 
-### Build
+## Develop
+
+Install dependencies:
 
 ```bash
-bun install
+npm install
 ```
 
-Ahead-of-time Bun bundle:
+Build the browser bundle:
 
 ```bash
-bun run build
+npm run build
 ```
 
-Single-file executable:
+Run directly without global install:
 
 ```bash
-bun run build:exe
-./dist/xdraw diagram.excalidraw
+npm start -- diagram.excalidraw
+```
+
+Link the local checkout globally while developing:
+
+```bash
+npm install -g .
+```
+
+`npm install -g .` links the `xdraw` command globally to this local checkout. Re-run `npm run build` after frontend changes.
+
+Typecheck and format:
+
+```bash
+npm run typecheck
+npm run format:check
 ```
 
 ## Notes
@@ -52,5 +77,5 @@ bun run build:exe
 - `Ctrl+S` / `Cmd+S` saves
 - file path without extension gets `.excalidraw` added
 - `new` fails if file already exists
-- frontend assets are bundled from `src/index.html` by Bun
+- frontend assets are built into `dist/client` by Vite
 - set `XDRAW_NO_OPEN=1` to skip browser launch during testing
