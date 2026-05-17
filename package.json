@@ -1,6 +1,6 @@
 {
   "name": "@martintrojer/xdraw",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Minimal Excalidraw CLI that opens files in your system browser",
   "type": "module",
   "packageManager": "npm@11.12.1",
@@ -8,20 +8,22 @@
     "node": ">=24"
   },
   "bin": {
-    "xdraw": "./bin/xdraw.ts"
+    "xdraw": "./dist/bin/xdraw.js"
   },
   "files": [
-    "bin",
+    "dist/bin",
     "dist/client",
     "LICENSE.txt",
     "README.md"
   ],
   "scripts": {
-    "build": "vite build",
-    "dev": "npm run build && node --watch ./bin/xdraw.ts",
+    "build": "vite build && tsc -p tsconfig.bin.json",
+    "build:bin": "tsc -p tsconfig.bin.json",
+    "prepublishOnly": "npm run build",
+    "dev": "npm run build && node --watch ./dist/bin/xdraw.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "start": "node ./bin/xdraw.ts",
+    "start": "node ./dist/bin/xdraw.js",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
