@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const CLIENT_DIR = path.join(ROOT_DIR, 'dist', 'client');
+const CLIENT_DIR = path.join(ROOT_DIR, 'client');
 const MAX_REQUEST_BYTES = 50 * 1024 * 1024;
 
 const CONTENT_TYPES: Record<string, string> = {
