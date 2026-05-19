@@ -11,6 +11,8 @@ import { spawn } from 'node:child_process';
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLIENT_DIR = path.join(ROOT_DIR, 'client');
 const MAX_REQUEST_BYTES = 50 * 1024 * 1024;
+const HEARTBEAT_TIMEOUT_MS = 30_000;
+const CLOSE_GRACE_MS = 5_000;
 
 const CONTENT_TYPES: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
@@ -33,9 +35,12 @@ function printHelp() {
   console.log(`xdraw
 
 Usage:
-  xdraw <file>
-  xdraw open <file>
-  xdraw new <file>
+  xdraw [--keep-alive] <file>
+  xdraw [--keep-alive] open <file>
+  xdraw [--keep-alive] new <file>
+
+Options:
+  --keep-alive        Keep the local server running after the browser tab closes
 
 Notes:
   - Opens Excalidraw in system browser
@@ -167,10 +172,85 @@ async function sendAsset(response: ServerResponse, urlPath: string) {
   }
 }
 
-async function startServer(targetPath: string, isNewFile: boolean) {
+async function startServer(targetPath: string, isNewFile: boolean, exitOnClose: boolean) {
+  let heartbeatClientId: string | null = null;
+  let heartbeatSeen = false;
+  let lastHeartbeatAt = 0;
+  let pendingExitTimer: NodeJS.Timeout | undefined;
+
+  const cancelPendingExit = () => {
+    if (!pendingExitTimer) {
+      return;
+    }
+
+    clearTimeout(pendingExitTimer);
+    pendingExitTimer = undefined;
+  };
+
+  const scheduleExit = (reason: string, delayMs: number) => {
+    if (!exitOnClose || pendingExitTimer) {
+      return;
+    }
+
+    pendingExitTimer = setTimeout(() => {
+      console.log(`${reason}. Use --keep-alive to keep the server running.`);
+      server.close(() => process.exit(0));
+      setTimeout(() => process.exit(0), 500).unref();
+    }, delayMs);
+    pendingExitTimer.unref();
+  };
+
   const server = createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? '/', 'http://localhost');
+
+      if (url.pathname === '/api/heartbeat') {
+        if (request.method !== 'POST') {
+          sendText(response, 405, 'Method not allowed');
+          return;
+        }
+
+        const body = (await readRequestJson(request)) as { clientId?: unknown };
+
+        if (typeof body.clientId !== 'string' || body.clientId.length === 0) {
+          sendText(response, 400, 'Missing client id');
+          return;
+        }
+
+        heartbeatClientId ??= body.clientId;
+
+        if (body.clientId === heartbeatClientId) {
+          heartbeatSeen = true;
+          lastHeartbeatAt = Date.now();
+          cancelPendingExit();
+        }
+
+        sendJson(response, 200, { ok: true });
+        return;
+      }
+
+      if (url.pathname === '/api/close') {
+        if (request.method !== 'POST') {
+          sendText(response, 405, 'Method not allowed');
+          return;
+        }
+
+        const body = (await readRequestJson(request)) as { clientId?: unknown };
+
+        if (typeof body.clientId !== 'string' || body.clientId.length === 0) {
+          sendText(response, 400, 'Missing client id');
+          return;
+        }
+
+        heartbeatClientId ??= body.clientId;
+
+        if (body.clientId === heartbeatClientId) {
+          scheduleExit('xdraw browser tab closed; exiting', CLOSE_GRACE_MS);
+        }
+
+        sendJson(response, 200, { ok: true });
+        return;
+      }
 
       if (url.pathname === '/api/scene') {
         if (request.method === 'GET') {
@@ -211,6 +291,26 @@ async function startServer(targetPath: string, isNewFile: boolean) {
     }
   });
 
+  let heartbeatTimer: NodeJS.Timeout | undefined;
+
+  if (exitOnClose) {
+    heartbeatTimer = setInterval(() => {
+      if (!heartbeatSeen || Date.now() - lastHeartbeatAt <= HEARTBEAT_TIMEOUT_MS) {
+        return;
+      }
+
+      scheduleExit('xdraw browser tab heartbeat lost; exiting', 0);
+    }, 1000);
+    heartbeatTimer.unref();
+
+    server.on('close', () => {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+      }
+      cancelPendingExit();
+    });
+  }
+
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const port = randomPort();
 
@@ -246,12 +346,19 @@ async function startServer(targetPath: string, isNewFile: boolean) {
 async function main() {
   const args = process.argv.slice(2);
 
-  if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
+  const keepAlive = args.includes('--keep-alive');
+  const positionalArgs = args.filter((arg) => arg !== '--keep-alive');
+
+  if (
+    positionalArgs.length === 0 ||
+    positionalArgs.includes('--help') ||
+    positionalArgs.includes('-h')
+  ) {
     printHelp();
-    process.exit(args.length === 0 ? 1 : 0);
+    process.exit(positionalArgs.length === 0 ? 1 : 0);
   }
 
-  const [commandOrPath, maybePath] = args;
+  const [commandOrPath, maybePath] = positionalArgs;
   const command = ['open', 'new'].includes(commandOrPath) ? commandOrPath : 'open';
   const rawTarget = command === 'open' ? commandOrPath : maybePath;
   const targetPath = path.resolve(process.cwd(), normalizeTarget(rawTarget));
@@ -276,7 +383,7 @@ async function main() {
     isNewFile = true;
   }
 
-  const { url } = await startServer(targetPath, isNewFile);
+  const { url } = await startServer(targetPath, isNewFile, !keepAlive);
 
   console.log(`xdraw serving ${targetPath}`);
   console.log(`xdraw opening ${url}`);

@@ -36,6 +36,11 @@ xdraw new sketch.excalidraw
 ```
 
 Both commands launch the default browser and keep a tiny local Node.js server running for save/load.
+By default, the server exits shortly after the opened browser tab is closed. Pass `--keep-alive` to keep it running:
+
+```bash
+xdraw --keep-alive diagram.excalidraw
+```
 
 ## Develop
 
@@ -75,6 +80,8 @@ npm run format:check
 ## Notes
 
 - `Ctrl+S` / `Cmd+S` saves
+- closing/reloading the tab warns when there are unsaved changes
+- the local server exits after the browser tab closes unless `--keep-alive` is passed
 - file path without extension gets `.excalidraw` added
 - `new` fails if file already exists
 - frontend assets are built into `dist/client` by Vite
